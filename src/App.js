@@ -17,6 +17,7 @@ import UploadPage from "./UploadPage";
 import History from "./History";
 import FormData from "./FormData";
 import Analytics from "./Analytics";
+import SiteMonitoring from "./SiteMonitoring";
 
 /* Logo */
 import logo from "./assets/logo.png";
@@ -73,6 +74,10 @@ const Layout = () => {
             📈 Analytics
           </Link>
 
+          <Link to="/site-monitoring" className="sidebar-btn">
+            📡 Site Monitoring
+          </Link>
+
         </nav>
       </div>
 
@@ -92,6 +97,7 @@ const Layout = () => {
             <Route path="/history" element={<History />} />
             <Route path="/form-data" element={<FormData />} />
             <Route path="/analytics" element={<Analytics />} />
+            <Route path="/site-monitoring" element={<SiteMonitoring />} />
 
             <Route path="*" element={<Navigate to="/dashboard" />} />
           </Routes>

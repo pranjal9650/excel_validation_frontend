@@ -1,94 +1,133 @@
-/* Background */
+/* Login.css - Elegant Red & Beige Theme */
+
 .login-container {
-  height: 100vh;
+  min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(135deg, #b30000, #ff1a1a);
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 50%, #7f1d1d 100%);
+  position: relative;
+  overflow: hidden;
 }
 
-/* Card */
+.login-container::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: 
+    radial-gradient(circle at 20% 80%, rgba(220, 38, 38, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(185, 28, 28, 0.15) 0%, transparent 50%);
+  animation: rotate 30s linear infinite;
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 .login-card {
   background: #ffffff;
-  padding: 25px 40px; 
-  width: 370px;
-  border-radius: 15px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+  padding: 48px;
+  border-radius: 24px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   text-align: center;
-  animation: fadeIn 0.6s ease-in-out;
+  position: relative;
+  z-index: 1;
+  animation: scaleIn 0.4s ease;
 }
 
-/* Logo */
-.login-logo {
-  width: 280px;   /* increase size */
-  height: auto;
-  margin-bottom: 25px;  /* increase space below logo */
-}
-
-.login-card h2 {
-  margin: 0;   /* THIS removes extra browser spacing */
-  color: #b30000;
-}
-
-/* Subtitle */
-.subtitle {
-  margin-bottom: 25px;
-  color: #777;
-  font-size: 14px;
-}
-
-/* Inputs */
-.login-card input {
-  width: 100%;
-  padding: 12px;
-  margin-bottom: 18px;
-  border-radius: 8px;
-  border: 1px solid #ddd;
-  outline: none;
-  font-size: 14px;
-  transition: 0.3s;
-}
-
-.login-card input:focus {
-  border-color: #b30000;
-  box-shadow: 0 0 5px rgba(179, 0, 0, 0.3);
-}
-
-/* Button */
-.login-card button {
-  width: 100%;
-  padding: 12px;
-  border-radius: 8px;
-  border: none;
-  background-color: #b30000;
-  color: white;
-  font-weight: bold;
-  cursor: pointer;
-  transition: 0.3s;
-  font-size: 15px;
-}
-
-.login-card button:hover {
-  background-color: #990000;
-  transform: translateY(-2px);
-}
-
-/* Error */
-.error {
-  color: red;
-  margin-bottom: 10px;
-  font-size: 14px;
-}
-
-/* Animation */
-@keyframes fadeIn {
+@keyframes scaleIn {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: scale(0.95);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: scale(1);
   }
+}
+
+.login-logo {
+  width: 220px;
+  height: auto;
+  margin-bottom: 20px;
+  border-radius: 12px;
+  transition: transform 0.3s ease;
+}
+
+.login-logo:hover {
+  transform: scale(1.08);
+}
+
+.login-card h2 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 8px;
+}
+
+.login-card .subtitle {
+  font-size: 14px;
+  color: #64748b;
+  margin-bottom: 32px;
+}
+
+.login-card form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.login-card input {
+  width: 100%;
+  padding: 16px;
+  border-radius: 10px;
+  border: 1px solid #e5e0d8;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  background: #fdfbf7;
+}
+
+.login-card input:focus {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
+  outline: none;
+  background: #ffffff;
+}
+
+.login-card button {
+  width: 100%;
+  margin-top: 8px;
+  padding: 16px;
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  border: none;
+  color: white;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.login-card button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(135deg, #b91c1c, #991b1b);
+}
+
+.login-error {
+  color: #ef4444;
+  margin-top: 12px;
+  font-size: 14px;
+  padding: 12px;
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: 8px;
+  border-left: 3px solid #ef4444;
+  text-align: left;
 }

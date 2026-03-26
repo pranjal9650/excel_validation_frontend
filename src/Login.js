@@ -35,7 +35,7 @@ function Login() {
         <h2>Welcome Back</h2>
         <p className="subtitle">Sign in to continue</p>
 
-        {error && <p className="error">{error}</p>}
+        {error && <p className="login-error">{error}</p>}
 
         <form onSubmit={handleLogin}>
           <input

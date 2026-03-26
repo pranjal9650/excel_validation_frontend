@@ -140,55 +140,51 @@ function Analytics() {
     : [];
 
   return (
-    <div style={{ padding: 30, background: "#f5eaea", minHeight: "100vh" }}>
+    <div className="dashboard-wrapper">
 
-      <h1 style={{ color: "#7f1d1d", marginBottom: 25 }}>
-        📊 Analytics Dashboard
-      </h1>
+      <div className="page-header">
+        <h2>📊 Analytics Dashboard</h2>
+        <p>Detailed analytics and insights across all forms</p>
+      </div>
 
       {/* FILTERS */}
 
-      <div style={{
-        display: "flex",
-        gap: 15,
-        flexWrap: "wrap",
-        marginBottom: 20
-      }}>
+      <div className="filters-container" style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
 
-        <input
-          type="month"
-          value={monthYear}
-          onChange={e => setMonthYear(e.target.value)}
-        />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <label style={{ fontWeight: 600, color: '#4b5563', fontSize: '13px' }}>Month:</label>
+          <input
+            type="month"
+            value={monthYear}
+            onChange={e => setMonthYear(e.target.value)}
+            style={{
+              padding: '10px 14px',
+              borderRadius: '8px',
+              border: '1px solid #e5e0d8',
+              fontSize: '13px',
+              background: '#fff',
+              color: '#1f2937'
+            }}
+          />
+        </div>
 
         <button
           onClick={fetchAnalytics}
-          style={{
-            background: "#7f1d1d",
-            color: "white",
-            padding: "8px 15px",
-            borderRadius: 6,
-            border: "none",
-            cursor: "pointer"
-          }}
+          className="filter-btn"
         >
-          Apply Filter
+          🔍 Apply Filter
         </button>
 
-        {/* ⭐ TOGGLE BUTTON */}
+        {/* TOGGLE BUTTON */}
         <button
           onClick={() => setShowCircleAnalytics(!showCircleAnalytics)}
+          className="filter-btn"
           style={{
-            background: "#1d4ed8",
-            color: "white",
-            padding: "8px 15px",
-            borderRadius: 6,
-            border: "none",
-            cursor: "pointer"
+            background: showCircleAnalytics ? "#10b981" : "#dc2626"
           }}
         >
-          {showCircleAnalytics
-            ? "📊 Show Form Analytics"
+          {showCircleAnalytics 
+            ? "📊 Show Form Analytics" 
             : "🌐 Show Circle Analytics"}
         </button>
 
@@ -197,12 +193,9 @@ function Analytics() {
       {/* LOADER */}
 
       {loading && (
-        <div style={{
-          textAlign: "center",
-          fontSize: 18,
-          marginBottom: 20
-        }}>
-          🔄 Loading Analytics Data...
+        <div className="loading-container">
+          <div className="loader"></div>
+          <h2>Loading Analytics Data...</h2>
         </div>
       )}
 
@@ -214,39 +207,33 @@ function Analytics() {
 
           /* ================= FORM ANALYTICS TABLE ================= */
 
-          <div style={{
-            overflowX: "auto",
-            background: "white",
-            padding: 20,
-            borderRadius: 14,
-            boxShadow: "0 5px 15px rgba(0,0,0,0.08)"
+          <div className="table-wrapper" style={{ 
+            overflowX: 'auto', 
+            maxWidth: '100%', 
+            marginTop: 20,
+            WebkitOverflowScrolling: 'touch',
+            touchAction: 'pan-x'
           }}>
 
-            <table style={{
-              width: "100%",
-              minWidth: 1200,
-              borderCollapse: "collapse"
-            }}>
+            <table className="history-table" style={{ minWidth: '800px' }}>
 
               <thead>
 
-                <tr style={{ background: "#7f1d1d", color: "white" }}>
+                <tr>
 
-                  <th style={thStyle}>
+                  <th style={{ ...thStyle, minWidth: 80, textAlign: 'center', width: 80 }}>
                     Username
-
-                    <br />
-
+                    <div style={{ marginTop: 10 }}></div>
                     <input
-                      placeholder="Search user..."
+                      placeholder="Search..."
                       value={searchUsername}
                       onChange={e => setSearchUsername(e.target.value)}
                       style={{
-                        marginTop: 8,
                         padding: 6,
                         borderRadius: 6,
                         border: "1px solid #ddd",
-                        width: "90%"
+                        width: "50%",
+                        fontSize: 11
                       }}
                     />
                   </th>
@@ -255,7 +242,7 @@ function Analytics() {
                     <th key={f.name} style={thStyle}>
                       {f.name}
                       <br />
-                      <span style={{ fontSize: 12 }}>
+                      <span style={{ fontSize: 12, opacity: 0.8 }}>
                         (Total: {f.total})
                       </span>
                     </th>
@@ -271,11 +258,11 @@ function Analytics() {
 
                 {filteredGrid.map((row, i) => (
 
-                  <tr key={i}
-                    style={{ background: i % 2 ? "#fff" : "#f9eaea" }}
+                  <tr
+                    key={i}
                   >
 
-                    <td style={tdStyle}>{row.username}</td>
+                    <td style={{ ...tdStyle, textAlign: 'center' }}>{row.username}</td>
 
                     {chartData.map(f => {
 
@@ -288,13 +275,13 @@ function Analytics() {
                       return (
                         <td key={f.name} style={tdStyle}>
 
-                          <span style={{ color: "#16a34a", fontWeight: 600 }}>
+                          <span style={{ color: "#10b981", fontWeight: 600 }}>
                             {d.valid}
                           </span>
 
                           {" / "}
 
-                          <span style={{ color: "#dc2626", fontWeight: 600 }}>
+                          <span style={{ color: "#ef4444", fontWeight: 600 }}>
                             {d.invalid}
                           </span>
 
@@ -324,17 +311,19 @@ function Analytics() {
 
           /* ================= CIRCLE ANALYTICS TABLE ================= */
 
-          <div style={{
-            background: "white",
-            padding: 20,
-            borderRadius: 14
+          <div className="table-wrapper" style={{ 
+            overflowX: 'auto', 
+            maxWidth: '100%', 
+            marginTop: 20,
+            WebkitOverflowScrolling: 'touch',
+            touchAction: 'pan-x'
           }}>
 
             {circleSummary && Object.keys(circleSummary).map(formName => (
 
-              <div key={formName} style={{ marginBottom: 40 }}>
+              <div key={formName} style={{ marginBottom: 40, minWidth: '600px' }}>
 
-                <h3 style={{ color: "#7f1d1d" }}>
+                <h3 style={{ color: "#dc2626", marginBottom: 16, fontWeight: 600 }}>
                   {formName} — Circle Wise Data
                 </h3>
 
@@ -381,14 +370,20 @@ function Analytics() {
 const thStyle = {
   padding: 12,
   textAlign: "center",
-  whiteSpace: "nowrap"
+  whiteSpace: "nowrap",
+  background: "#7f1d1d",
+  color: "white",
+  minWidth: 100,
+  fontSize: 13
 };
 
 const tdStyle = {
   padding: 10,
   textAlign: "center",
   borderBottom: "1px solid #eee",
-  whiteSpace: "nowrap"
+  whiteSpace: "nowrap",
+  minWidth: 100,
+  fontSize: 14
 };
 
 export default Analytics;

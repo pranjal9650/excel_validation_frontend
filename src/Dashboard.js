@@ -19,10 +19,6 @@ const Dashboard = () => {
   const [stats, setStats] = useState(null);
   const [summary, setSummary] = useState(null);
 
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [month, setMonth] = useState("");
-
   /* ================= SUMMARY FETCH ================= */
 
   useEffect(() => {
@@ -38,26 +34,14 @@ const Dashboard = () => {
 
     try {
 
-      let url = `${BASE_URL}/ANALYTICS`;
-      const params = [];
-
-      if (startDate && endDate) {
-        params.push(`start_date=${startDate}`);
-        params.push(`end_date=${endDate}`);
-      }
-
-      if (month) params.push(`month=${month}`);
-
-      if (params.length) url += "?" + params.join("&");
-
-      const res = await axios.get(url);
+      const res = await axios.get(`${BASE_URL}/ANALYTICS`);
       processAnalytics(res.data);
 
     } catch (err) {
       console.error(err);
     }
 
-  }, [startDate, endDate, month]);
+  }, []);
 
   useEffect(() => {
     fetchAnalytics();
@@ -125,7 +109,7 @@ const Dashboard = () => {
         }}
       >
         <div className="loader"></div>
-        <h2 style={{ marginTop: 15, color: "#b30000" }}>
+        <h2 style={{ marginTop: 15, color: "#627d98" }}>
           Loading Dashboard...
         </h2>
       </div>
@@ -142,13 +126,16 @@ const Dashboard = () => {
   return (
     <div className="dashboard-wrapper">
 
-      <h2>Validation Analytics Dashboard</h2>
+      <div className="page-header">
+        <h2>Validation Analytics Dashboard</h2>
+        <p>Overview of all form validation metrics and statistics</p>
+      </div>
 
       {/* KPI CARDS */}
       <div className="stats-container">
 
-        <div className="stat-box">
-          <h3>Total UploadedForms</h3>
+        <div className="stat-box primary">
+          <h3>Total Forms</h3>
           <h2>{total_forms}</h2>
         </div>
 
@@ -158,61 +145,23 @@ const Dashboard = () => {
         </div>
 
         <div className="stat-box valid">
-          <h3>Total Valid</h3>
+          <h3>Valid Rows</h3>
           <h2>{valid_rows}</h2>
         </div>
 
         <div className="stat-box invalid">
-          <h3>Total Invalid</h3>
+          <h3>Invalid Rows</h3>
           <h2>{junk_rows}</h2>
         </div>
 
       </div>
 
-      {/* FILTERS */}
-      <div style={{ display: "flex", gap: 10, marginTop: 30, marginBottom: 20 }}>
-
-        <input type="date"
-          value={startDate}
-          onChange={e => setStartDate(e.target.value)} />
-
-        <input type="date"
-          value={endDate}
-          onChange={e => setEndDate(e.target.value)} />
-
-        <input type="month"
-          value={month}
-          onChange={e => setMonth(e.target.value)} />
-
-        <button
-          onClick={fetchAnalytics}
-          style={{
-            background: "#b30000",
-            color: "white",
-            padding: "8px 15px",
-            borderRadius: 6,
-            border: "none",
-            cursor: "pointer"
-          }}
-        >
-          Apply Filters
-        </button>
-
-      </div>
-
       {/* CHART */}
-      <div style={{
-        background: "white",
-        padding: 25,
-        borderRadius: 16,
-        boxShadow: "0 8px 30px rgba(179,0,0,0.08)"
-      }}>
+      <div className="chart-section">
 
-        <h3 style={{ marginBottom: 20 }}>
-          Form Wise Validation Distribution
-        </h3>
+        <h3>Form-wise Validation Distribution</h3>
 
-        <ResponsiveContainer width="100%" height={400}>
+        <ResponsiveContainer width="100%" height={280}>
           <BarChart data={chartData}>
 
             <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
@@ -235,7 +184,7 @@ const Dashboard = () => {
             <Bar
               dataKey="valid"
               name="Valid"
-              fill="#16a34a"
+              fill="#10b981"
               radius={[6, 6, 0, 0]}
               maxBarSize={60}
             />
@@ -243,7 +192,7 @@ const Dashboard = () => {
             <Bar
               dataKey="invalid"
               name="Invalid"
-              fill="#dc2626"
+              fill="#ef4444"
               radius={[6, 6, 0, 0]}
               maxBarSize={60}
             />

@@ -17,6 +17,9 @@ const SiteMonitoring = () => {
 
   const [loading, setLoading] = useState(false);
 
+  // Add state for viewing preference
+  const [viewMode, setViewMode] = useState("all"); // "all", "active", "outage"
+
   // ✅ ONLY INITIAL LOAD
   useEffect(() => {
     fetchData();
@@ -44,6 +47,20 @@ const SiteMonitoring = () => {
 
       setUpSites(upRes.data);
       setFilteredUp(upRes.data);
+
+      const combinedData = [
+        ...upRes.data.map(site => ({
+          ...site,
+          status: "Active"
+          })),
+          ...downRes.data.map(site => ({
+            ...site,
+            status: "Outage"
+            }))
+          ];
+
+          await axios.post(`${BASE_URL}/SAVE-SITE-DATA`, combinedData);
+          console.log("DB SAVED ✅");
 
     } catch (err) {
       console.error(err);
@@ -80,117 +97,244 @@ const SiteMonitoring = () => {
   }, [search, downSites, upSites]);
 
   if (loading || !summary) {
-    return <h2 style={{ textAlign: "center" }}>Loading Site Monitoring...</h2>;
+    return (
+      <div className="loading-container">
+        <div className="loader"></div>
+        <h2>Loading Site Monitoring...</h2>
+      </div>
+    );
   }
 
   return (
     <div className="dashboard-wrapper">
 
-      <h2>Site Monitoring Dashboard</h2>
+      <div className="page-header">
+        <h2>🖥️ Site Monitoring Dashboard</h2>
+        <p>Track and monitor site status and connectivity in real-time</p>
+      </div>
 
-      {/* 🔥 FILTERS */}
-      <div style={{ marginBottom: 20 }}>
-        <input
-          type="text"
-          placeholder="Start Date (YYYY-MM-DD)"
-          value={startDate}
-          onChange={(e) => setStartDate(e.target.value)}
-          style={{ marginRight: 10 }}
-        />
+      {/* FILTERS */}
+      <div className="filters-container" style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
+        
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <label style={{ fontWeight: 600, color: '#4b5563', fontSize: '13px' }}>From:</label>
+          <input
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            style={{
+              padding: '10px 14px',
+              borderRadius: '8px',
+              border: '1px solid #e5e0d8',
+              fontSize: '13px',
+              background: '#fff',
+              color: '#1f2937'
+            }}
+          />
+        </div>
 
-        <input
-          type="text"
-          placeholder="End Date (YYYY-MM-DD)"
-          value={endDate}
-          onChange={(e) => setEndDate(e.target.value)}
-          style={{ marginRight: 10 }}
-        />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <label style={{ fontWeight: 600, color: '#4b5563', fontSize: '13px' }}>To:</label>
+          <input
+            type="date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            style={{
+              padding: '10px 14px',
+              borderRadius: '8px',
+              border: '1px solid #e5e0d8',
+              fontSize: '13px',
+              background: '#fff',
+              color: '#1f2937'
+            }}
+          />
+        </div>
 
-        <button onClick={fetchData} style={{ marginRight: 20 }}>
-          Apply Date Filter
+        <button onClick={fetchData} className="filter-btn" style={{ padding: '10px 20px' }}>
+          🔍 Apply Filter
         </button>
 
+        {/* View Mode Toggle */}
+        <div style={{ display: 'flex', gap: '8px', marginLeft: 'auto' }}>
+          <button 
+            onClick={() => setViewMode('all')} 
+            style={{
+              padding: '10px 16px',
+              borderRadius: '8px',
+              border: viewMode === 'all' ? '2px solid #dc2626' : '1px solid #e5e0d8',
+              background: viewMode === 'all' ? '#fef2f2' : '#fff',
+              color: viewMode === 'all' ? '#dc2626' : '#4b5563',
+              fontWeight: 600,
+              cursor: 'pointer',
+              fontSize: '13px'
+            }}
+          >
+            📊 All Sites
+          </button>
+          <button 
+            onClick={() => setViewMode('active')} 
+            style={{
+              padding: '10px 16px',
+              borderRadius: '8px',
+              border: viewMode === 'active' ? '2px solid #10b981' : '1px solid #e5e0d8',
+              background: viewMode === 'active' ? '#ecfdf5' : '#fff',
+              color: viewMode === 'active' ? '#10b981' : '#4b5563',
+              fontWeight: 600,
+              cursor: 'pointer',
+              fontSize: '13px'
+            }}
+          >
+            🟢 Active
+          </button>
+          <button 
+            onClick={() => setViewMode('outage')} 
+            style={{
+              padding: '10px 16px',
+              borderRadius: '8px',
+              border: viewMode === 'outage' ? '2px solid #ef4444' : '1px solid #e5e0d8',
+              background: viewMode === 'outage' ? '#fef2f2' : '#fff',
+              color: viewMode === 'outage' ? '#ef4444' : '#4b5563',
+              fontWeight: 600,
+              cursor: 'pointer',
+              fontSize: '13px'
+            }}
+          >
+            🔴 Outage
+          </button>
+        </div>
+
         <input
           type="text"
-          placeholder="Search Site Name / Site ID"
+          placeholder="🔎 Search Site Name or Site ID..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
+          style={{
+            padding: '10px 14px',
+            borderRadius: '8px',
+            border: '1px solid #e5e0d8',
+            fontSize: '13px',
+            background: '#fff',
+            color: '#1f2937',
+            flex: 1,
+            minWidth: '200px'
+          }}
         />
       </div>
 
       {/* 📊 CARDS */}
-      <div className="stats-container">
-        <div className="stat-box">
-          <h3>Total Sites</h3>
-          <h2>{summary.total_sites}</h2>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginTop: '16px' }}>
+        <div className="stat-box primary" style={{ position: 'relative', overflow: 'hidden', padding: '16px' }}>
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, #dc2626, #b91c1c)' }}></div>
+          <h3>📍 Total Sites</h3>
+          <h2 style={{ fontSize: '36px', fontWeight: 800, color: '#1f2937' }}>{summary.total_sites}</h2>
         </div>
 
-        <div className="stat-box valid">
-          <h3>Active Sites</h3>
-          <h2>{summary.up_sites}</h2>
+        <div className="stat-box valid" style={{ position: 'relative', overflow: 'hidden', padding: '16px' }}>
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, #10b981, #059669)' }}></div>
+          <h3>✅ Active Sites</h3>
+          <h2 style={{ fontSize: '36px', fontWeight: 800, color: '#10b981' }}>{summary.up_sites}</h2>
         </div>
 
-        <div className="stat-box invalid">
-          <h3>Outage Sites</h3>
-          <h2>{summary.down_sites}</h2>
+        <div className="stat-box invalid" style={{ position: 'relative', overflow: 'hidden', padding: '16px' }}>
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, #ef4444, #dc2626)' }}></div>
+          <h3>⚠️ Outage Sites</h3>
+          <h2 style={{ fontSize: '36px', fontWeight: 800, color: '#ef4444' }}>{summary.down_sites}</h2>
         </div>
       </div>
 
       {/* 🟢 ACTIVE FIRST */}
-      <div style={{ background: "white", padding: 25, borderRadius: 16, marginTop: 20 }}>
-        <h3>🟢 Active Sites ({filteredUp.length})</h3>
+      {(viewMode === 'all' || viewMode === 'active') && (
+      <div className="card" style={{ marginTop: 24 }}>
+        <div className="card-header">
+          <h3 className="card-title" style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '20px' }}>🟢</span> Active Sites ({filteredUp.length})
+          </h3>
+        </div>
 
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr>
-              <th>Site Name</th>
-              <th>Site ID</th>
-              <th>Status</th>
-              <th>Since</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {filteredUp.map((site, i) => (
-              <tr key={i} style={{ textAlign: "center" }}>
-                <td>{site.site_name}</td>
-                <td>{site.global_id}</td>
-                <td style={{ color: "green", fontWeight: "bold" }}>Active</td>
-                <td>{site.since && site.since !== "Running" ? site.since : "-"}</td>
+        <div style={{ overflowX: 'auto' }}>
+          <table className="history-table">
+            <thead>
+              <tr>
+                <th>Site Name</th>
+                <th>Site ID</th>
+                <th>Status</th>
+                <th>Since</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+
+            <tbody>
+              {filteredUp.map((site, i) => (
+                <tr key={i}>
+                  <td style={{ fontWeight: 500 }}>{site.site_name}</td>
+                  <td style={{ color: '#6b7280' }}>{site.global_id}</td>
+                  <td>
+                    <span style={{ 
+                      background: 'rgba(16, 185, 129, 0.15)', 
+                      color: '#10b981',
+                      padding: '6px 12px',
+                      borderRadius: '20px',
+                      fontSize: '12px',
+                      fontWeight: 600
+                    }}>
+                      ● Active
+                    </span>
+                  </td>
+                  <td style={{ color: '#6b7280' }}>{site.since && site.since !== "Running" ? site.since : "-"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
+      )}
 
       {/* 🔴 OUTAGE */}
-      <div style={{ background: "white", padding: 25, borderRadius: 16, marginTop: 20 }}>
-        <h3>🔴 Outage Sites ({filteredDown.length})</h3>
+      {(viewMode === 'all' || viewMode === 'outage') && (
+      <div className="card" style={{ marginTop: 24, marginBottom: 24 }}>
+        <div className="card-header">
+          <h3 className="card-title" style={{ color: '#ef4444', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '20px' }}>🔴</span> Outage Sites ({filteredDown.length})
+          </h3>
+        </div>
 
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr>
-              <th>Site Name</th>
-              <th>Site ID</th>
-              <th>Alarm</th>
-              <th>Since</th>
-              <th>End Time</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {filteredDown.map((site, i) => (
-              <tr key={i} style={{ textAlign: "center" }}>
-                <td>{site.site_name}</td>
-                <td>{site.global_id}</td>
-                <td style={{ color: "red" }}>{site.alarm}</td>
-                <td>{site.since}</td>
-                <td>{site.end_time || "-"}</td>
+        <div style={{ overflowX: 'auto' }}>
+          <table className="history-table">
+            <thead>
+              <tr>
+                <th>Site Name</th>
+                <th>Site ID</th>
+                <th>Alarm</th>
+                <th>Since</th>
+                <th>End Time</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+
+            <tbody>
+              {filteredDown.map((site, i) => (
+                <tr key={i}>
+                  <td style={{ fontWeight: 500 }}>{site.site_name}</td>
+                  <td style={{ color: '#6b7280' }}>{site.global_id}</td>
+                  <td>
+                    <span style={{ 
+                      background: 'rgba(239, 68, 68, 0.15)', 
+                      color: '#ef4444',
+                      padding: '6px 12px',
+                      borderRadius: '20px',
+                      fontSize: '12px',
+                      fontWeight: 600
+                    }}>
+                      {site.alarm}
+                    </span>
+                  </td>
+                  <td style={{ color: '#6b7280' }}>{site.since}</td>
+                  <td style={{ color: '#6b7280' }}>{site.end_time || "-"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
+      )}
 
     </div>
   );

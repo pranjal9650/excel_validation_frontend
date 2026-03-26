@@ -21,9 +21,12 @@ function History() {
   };
 
   return (
-    <div className="page-box">
+    <div className="dashboard-wrapper">
 
-      <h2>Upload History</h2>
+      <div className="page-header">
+        <h2>Upload History</h2>
+        <p>View all previously uploaded Excel files and their validation results</p>
+      </div>
 
       <div className="table-wrapper">
 

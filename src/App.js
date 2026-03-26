@@ -39,56 +39,58 @@ const Layout = () => {
       <div className="sidebar">
 
         {/* Logo Above Title */}
-        <div style={{ textAlign: "center", marginBottom: "20px" }}>
+        <div className="sidebar-logo">
           <img
             src={logo}
             alt="Logo"
-            style={{
-              width: "160px",
-              height: "auto"
-            }}
           />
         </div>
 
-        <h2 className="logo">ML Dashboard</h2>
+        <h2 className="sidebar-title">Excel Validator</h2>
 
         <nav className="sidebar-nav">
 
           <Link to="/dashboard" className="sidebar-btn">
-            📊 Dashboard
+            <span className="sidebar-icon">📊</span>
+            <span>Dashboard</span>
           </Link>
 
           <Link to="/upload" className="sidebar-btn">
-            📁 Upload File
+            <span className="sidebar-icon">📤</span>
+            <span>Upload File</span>
           </Link>
 
           <Link to="/history" className="sidebar-btn">
-            📜 Upload History
+            <span className="sidebar-icon">📋</span>
+            <span>Upload History</span>
           </Link>
 
           <Link to="/form-data" className="sidebar-btn">
-            📋 Form Data
+            <span className="sidebar-icon">📑</span>
+            <span>Form Data</span>
           </Link>
 
           <Link to="/analytics" className="sidebar-btn">
-            📈 Analytics
+            <span className="sidebar-icon">📈</span>
+            <span>Analytics</span>
           </Link>
 
           <Link to="/site-monitoring" className="sidebar-btn">
-            📡 Site Monitoring
+            <span className="sidebar-icon">🗺️</span>
+            <span>Site Monitoring</span>
           </Link>
+
+          {/* Logout Button in Sidebar */}
+          <button className="sidebar-btn" onClick={handleLogout} style={{ marginTop: 'auto' }}>
+            <span className="sidebar-icon">🚪</span>
+            <span>Logout</span>
+          </button>
 
         </nav>
       </div>
 
       {/* Main Content */}
       <div className="main-content">
-
-        <div className="top-bar">
-          <button className="logout-btn" onClick={handleLogout}>
-            Logout
-          </button>
-        </div>
 
         <div className="page-content">
           <Routes>

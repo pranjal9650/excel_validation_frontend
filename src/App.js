@@ -17,6 +17,7 @@ import History from "./History";
 import FormData from "./FormData";
 import Analytics from "./Analytics";
 import SiteMonitoring from "./SiteMonitoring";
+import CreateForm from "./CreateForm";
 
 /* Logo */
 import logo from "./assets/logo.png";
@@ -60,6 +61,7 @@ const NAV_ITEMS = [
   { label: "Form Data",       icon: FileSpreadsheet,  path: "/form-data" },
   { label: "Analytics",       icon: BarChart2,        path: "/analytics" },
   { label: "Site Monitoring", icon: MapPin,           path: "/site-monitoring" },
+  { label: "Create Form", icon: FileSpreadsheet, path: "/create-form" },
 ];
 
 const PAGE_TITLES = {
@@ -69,6 +71,7 @@ const PAGE_TITLES = {
   "/form-data":       "Form Data",
   "/analytics":       "Analytics",
   "/site-monitoring": "Site Monitoring",
+  "/create-form": "Create Form",
 };
 
 /* ─── Sidebar nav link ───────────────────────────────────────── */
@@ -271,6 +274,7 @@ const Layout = () => {
           <Routes>
             <Route path="/dashboard"       element={<Dashboard />} />
             <Route path="/upload"          element={<UploadPage />} />
+            <Route path="/create-form" element={<CreateForm />} />
             <Route path="/history"         element={<History />} />
             <Route path="/form-data"       element={<FormData />} />
             <Route path="/analytics"       element={<Analytics />} />

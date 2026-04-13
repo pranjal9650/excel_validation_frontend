@@ -7,6 +7,7 @@ import {
 import {
   FileSpreadsheet, Rows3, CheckCircle2, XCircle, TrendingUp,
   TrendingDown, RefreshCw, User, ChevronDown, ChevronUp,
+  AlertTriangle, X,
 } from "lucide-react";
 
 const BASE_URL = "http://127.0.0.1:8000";
@@ -241,6 +242,30 @@ const Dashboard = () => {
   const [allFormNames, setAllFormNames] = useState([]);
   const [loading, setLoading]     = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [invalidModal, setInvalidModal]       = useState(false);
+  const [invalidFormName, setInvalidFormName] = useState("");
+  const [invalidRecords, setInvalidRecords]   = useState([]);
+  const [invalidLoading, setInvalidLoading]   = useState(false);
+
+  const [expandedUser, setExpandedUser] = useState(null);
+
+  const handleViewInvalid = async (formName) => {
+    setInvalidFormName(formName);
+    setInvalidModal(true);
+    setInvalidLoading(true);
+    setInvalidRecords([]);
+    setExpandedUser(null);
+    try {
+      const res = await axios.get(`${BASE_URL}/INVALID-RECORDS-BY-USER`, {
+        params: { form_name: formName }
+      });
+      setInvalidRecords(Array.isArray(res.data) ? res.data : []);
+    } catch (err) {
+      console.error("Failed to fetch invalid records:", err);
+      setInvalidRecords([]);
+    }
+    setInvalidLoading(false);
+  };
 
   const fetchAll = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
@@ -314,10 +339,295 @@ const Dashboard = () => {
     junk_rows   = 0,
   } = stats || {};
 
-  const validPct = total_rows ? Math.round((valid_rows / total_rows) * 100) : 0;
+  const validPct     = total_rows ? Math.round((valid_rows / total_rows) * 100) : 0;
+  const formsTrend   = total_forms || 0;
+  const rowsTrend    = total_rows ? Math.round((valid_rows / total_rows) * 100) : 0;
+  const invalidTrend = total_rows ? Math.round((junk_rows / total_rows) * 100) : 0;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20, fontFamily: "'DM Sans', sans-serif" }}>
+
+      {/* ── Invalid Records Modal ── */}
+      {invalidModal && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 1000,
+          background: "rgba(0,0,0,0.55)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          padding: 24, fontFamily: "'DM Sans', sans-serif",
+        }}>
+          <div style={{
+            background: T.white, borderRadius: 18,
+            width: "100%", maxWidth: 860,
+            maxHeight: "85vh", display: "flex", flexDirection: "column",
+            boxShadow: "0 24px 64px rgba(0,0,0,0.22)",
+            overflow: "hidden",
+          }}>
+
+            {/* Modal Header */}
+            <div style={{
+              padding: "20px 28px",
+              borderBottom: `1px solid ${T.grey200}`,
+              display: "flex", alignItems: "center",
+              justifyContent: "space-between", flexShrink: 0,
+            }}>
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{
+                    width: 36, height: 36, borderRadius: 10,
+                    background: T.redBg,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                  }}>
+                    <XCircle size={18} color={T.red} />
+                  </div>
+                  <div>
+                    <h3 style={{ fontSize: 16, fontWeight: 800, color: T.text, margin: 0 }}>
+                      Invalid Records
+                    </h3>
+                    <p style={{ fontSize: 12.5, color: T.muted, margin: 0 }}>
+                      {invalidFormName} — showing why each record was rejected
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => setInvalidModal(false)}
+                style={{
+                  width: 34, height: 34, borderRadius: 8,
+                  border: `1px solid ${T.grey200}`,
+                  background: T.grey100, cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}
+              >
+                <X size={16} color={T.muted} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div style={{ overflowY: "auto", flex: 1, padding: "16px 28px 24px" }}>
+
+              {invalidLoading ? (
+                <div style={{
+                  display: "flex", alignItems: "center",
+                  justifyContent: "center", height: 200, gap: 12,
+                  flexDirection: "column",
+                }}>
+                  <div style={{
+                    width: 36, height: 36, borderRadius: "50%",
+                    border: `3px solid ${T.grey200}`,
+                    borderTop: `3px solid ${T.red}`,
+                    animation: "spin 0.9s linear infinite",
+                  }} />
+                  <p style={{ color: T.muted, fontSize: 13.5 }}>
+                    Loading invalid records…
+                  </p>
+                </div>
+
+              ) : invalidRecords.length === 0 ? (
+                <div style={{
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  height: 200, flexDirection: "column", gap: 10,
+                }}>
+                  <CheckCircle2 size={40} color={T.green} />
+                  <p style={{ color: T.muted, fontSize: 14, margin: 0 }}>
+                    No invalid records found or data not available.
+                  </p>
+                </div>
+
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+
+                  {/* Summary strip */}
+                  <div style={{
+                    padding: "10px 16px", borderRadius: 10,
+                    background: T.redBg,
+                    border: "1px solid rgba(204,0,0,0.15)",
+                    display: "flex", alignItems: "center", gap: 8,
+                    marginBottom: 6,
+                  }}>
+                    <AlertTriangle size={14} color={T.red} />
+                    <span style={{ fontSize: 13, fontWeight: 600, color: T.red }}>
+                      {invalidRecords.length} user{invalidRecords.length !== 1 ? "s" : ""} with invalid entries
+                    </span>
+                    <span style={{ fontSize: 12.5, color: T.muted, marginLeft: 4 }}>
+                      — review the rejection reasons below
+                    </span>
+                  </div>
+
+                  {/* Records list — user-wise */}
+                  {invalidRecords.map((userRecord, i) => {
+                    const isExpanded = expandedUser === userRecord.username;
+                    return (
+                      <div key={i} style={{
+                        borderRadius: 12,
+                        border: `1px solid ${T.grey200}`,
+                        background: T.white,
+                        overflow: "hidden",
+                        boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
+                      }}>
+
+                        {/* User header row — clickable to expand */}
+                        <div
+                          onClick={() => setExpandedUser(isExpanded ? null : userRecord.username)}
+                          style={{
+                            padding: "14px 18px",
+                            background: isExpanded ? T.redBg : T.grey100,
+                            borderBottom: isExpanded ? `1px solid rgba(204,0,0,0.15)` : "none",
+                            display: "flex", alignItems: "center",
+                            justifyContent: "space-between",
+                            cursor: "pointer",
+                            transition: "all 0.15s ease",
+                          }}
+                        >
+                          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                            <div style={{
+                              width: 36, height: 36, borderRadius: "50%",
+                              background: T.redBg,
+                              border: `2px solid rgba(204,0,0,0.2)`,
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                              fontSize: 13, fontWeight: 800, color: T.red, flexShrink: 0,
+                            }}>
+                              {(userRecord.username || "?")[0].toUpperCase()}
+                            </div>
+                            <div>
+                              <p style={{ fontSize: 14, fontWeight: 700, color: T.text, margin: 0 }}>
+                                {userRecord.username}
+                              </p>
+                              <p style={{ fontSize: 12, color: T.muted, margin: 0 }}>
+                                {userRecord.total_invalid} invalid entr{userRecord.total_invalid !== 1 ? "ies" : "y"}
+                                &nbsp;·&nbsp; {userRecord.field_summary?.length || 0} field{(userRecord.field_summary?.length || 0) !== 1 ? "s" : ""} affected
+                              </p>
+                            </div>
+                          </div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            {userRecord.field_summary?.[0] && (
+                              <span style={{
+                                fontSize: 11.5, fontWeight: 600,
+                                background: T.redBg, color: T.red,
+                                padding: "3px 10px", borderRadius: 99,
+                                border: "1px solid rgba(204,0,0,0.2)",
+                              }}>
+                                Most failed: {userRecord.field_summary[0].field}
+                              </span>
+                            )}
+                            {isExpanded
+                              ? <ChevronUp size={16} color={T.red} />
+                              : <ChevronDown size={16} color={T.muted} />
+                            }
+                          </div>
+                        </div>
+
+                        {/* Expanded detail */}
+                        {isExpanded && (
+                          <div style={{ padding: "14px 18px", display: "flex", flexDirection: "column", gap: 10 }}>
+
+                            <p style={{
+                              fontSize: 11.5, fontWeight: 700, color: T.muted,
+                              textTransform: "uppercase", letterSpacing: 0.6, margin: 0,
+                            }}>
+                              Field-wise Failure Breakdown
+                            </p>
+
+                            <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+                              {(userRecord.field_summary || []).map((fs, j) => (
+                                <div key={j} style={{
+                                  display: "flex", alignItems: "flex-start",
+                                  gap: 12, padding: "10px 14px", borderRadius: 9,
+                                  background: T.grey100, border: `1px solid ${T.grey200}`,
+                                }}>
+                                  <XCircle size={14} color={T.red} style={{ marginTop: 2, flexShrink: 0 }} />
+                                  <div style={{ flex: 1 }}>
+                                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                                      <span style={{ fontSize: 13, fontWeight: 700, color: T.text }}>
+                                        {fs.field}
+                                      </span>
+                                      <span style={{
+                                        fontSize: 11.5, fontWeight: 700,
+                                        background: T.redBg, color: T.red,
+                                        padding: "1px 8px", borderRadius: 99,
+                                        border: "1px solid rgba(204,0,0,0.15)",
+                                      }}>
+                                        {fs.fail_count} failure{fs.fail_count !== 1 ? "s" : ""}
+                                      </span>
+                                    </div>
+                                    {fs.sample_values?.length > 0 && (
+                                      <p style={{ fontSize: 12, color: T.muted, margin: "4px 0 0" }}>
+                                        Sample bad values:&nbsp;
+                                        {fs.sample_values.map((v, k) => (
+                                          <span key={k} style={{
+                                            background: T.white,
+                                            border: `1px solid ${T.grey200}`,
+                                            borderRadius: 5, padding: "1px 7px",
+                                            fontSize: 11.5, fontWeight: 600,
+                                            color: T.text, marginRight: 4,
+                                          }}>
+                                            "{v}"
+                                          </span>
+                                        ))}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+
+                            {userRecord.sample_errors?.length > 0 && (
+                              <>
+                                <p style={{
+                                  fontSize: 11.5, fontWeight: 700, color: T.muted,
+                                  textTransform: "uppercase", letterSpacing: 0.6,
+                                  margin: "6px 0 0",
+                                }}>
+                                  Sample Invalid Rows (up to 3)
+                                </p>
+                                {userRecord.sample_errors.map((rec, k) => (
+                                  <div key={k} style={{
+                                    borderRadius: 8, overflow: "hidden",
+                                    border: `1px solid rgba(204,0,0,0.12)`,
+                                  }}>
+                                    <div style={{
+                                      padding: "7px 12px",
+                                      background: T.redBg,
+                                      fontSize: 12, fontWeight: 700, color: T.red,
+                                    }}>
+                                      Row {rec.row_number}
+                                    </div>
+                                    <div style={{ padding: "8px 12px", display: "flex", flexDirection: "column", gap: 5 }}>
+                                      {rec.errors.map((err, m) => (
+                                        <div key={m} style={{
+                                          display: "flex", alignItems: "flex-start", gap: 8,
+                                          fontSize: 12.5, color: T.text,
+                                        }}>
+                                          <span style={{ fontWeight: 700, minWidth: 120, color: T.muted }}>
+                                            {err.field}:
+                                          </span>
+                                          <span style={{
+                                            background: T.redBg, color: T.red,
+                                            padding: "0px 6px", borderRadius: 5,
+                                            fontWeight: 600, fontSize: 12,
+                                          }}>
+                                            "{err.value}"
+                                          </span>
+                                          <span style={{ color: T.muted, fontSize: 12 }}>
+                                            — {err.reason}
+                                          </span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                ))}
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Page header ── */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
@@ -355,10 +665,10 @@ const Dashboard = () => {
 
         {/* Left: 4 KPI cards */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gridTemplateRows: "1fr 1fr", gap: 14, height: "100%" }}>
-          <StatCard label="Total Forms"   value={total_forms.toLocaleString()} icon={FileSpreadsheet} accent={T.blue}   bg={T.blueBg}   trend={12} trendLabel="vs last month" />
-          <StatCard label="Total Rows"    value={total_rows.toLocaleString()}  icon={Rows3}           accent="#8B5CF6" bg="rgba(139,92,246,0.08)" trend={5} trendLabel="vs last month" />
-          <StatCard label="Valid Rows"    value={valid_rows.toLocaleString()}  icon={CheckCircle2}    accent={T.green} bg={T.greenBg}   trend={validPct} trendLabel="accuracy rate" />
-          <StatCard label="Invalid Rows"  value={junk_rows.toLocaleString()}   icon={XCircle}         accent={T.red}   bg={T.redBg}    trend={-8} trendLabel="vs last month" />
+          <StatCard label="Total Forms"   value={total_forms.toLocaleString()} icon={FileSpreadsheet} accent={T.blue}   bg={T.blueBg}   trend={formsTrend}   trendLabel={`form${total_forms !== 1 ? "s" : ""} uploaded`} />
+          <StatCard label="Total Rows"    value={total_rows.toLocaleString()}  icon={Rows3}           accent="#8B5CF6" bg="rgba(139,92,246,0.08)" trend={rowsTrend}    trendLabel="valid row rate" />
+          <StatCard label="Valid Rows"    value={valid_rows.toLocaleString()}  icon={CheckCircle2}    accent={T.green} bg={T.greenBg}   trend={validPct}     trendLabel="accuracy rate" />
+          <StatCard label="Invalid Rows"  value={junk_rows.toLocaleString()}   icon={XCircle}         accent={T.red}   bg={T.redBg}     trend={invalidTrend} trendLabel="invalid row rate" />
         </div>
 
         {/* Right: Bar chart */}
@@ -409,7 +719,7 @@ const Dashboard = () => {
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13.5 }}>
               <thead>
                 <tr style={{ background: T.grey100 }}>
-                  {["Form Name", "Total", "Valid", "Invalid", "Accuracy"].map((h) => (
+                  {["Form Name", "Total", "Valid", "Invalid", "Accuracy", "Details"].map((h) => (
                     <th key={h} style={{ padding: "10px 20px", textAlign: "left", fontSize: 11.5, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.6, color: T.muted, whiteSpace: "nowrap", borderBottom: `1px solid ${T.grey200}` }}>{h}</th>
                   ))}
                 </tr>
@@ -437,6 +747,34 @@ const Dashboard = () => {
                           </div>
                           <span style={{ fontSize: 12.5, fontWeight: 600, color: T.muted, minWidth: 32 }}>{acc}%</span>
                         </div>
+                      </td>
+                      <td style={{ padding: "12px 20px", borderBottom: `1px solid ${T.grey200}` }}>
+                        {row.Invalid > 0 ? (
+                          <button
+                            onClick={() => handleViewInvalid(row.name)}
+                            style={{
+                              padding: "5px 14px", borderRadius: 7,
+                              border: `1px solid ${T.grey200}`,
+                              background: T.white, color: T.red,
+                              fontSize: 12, fontWeight: 700,
+                              fontFamily: "'DM Sans', sans-serif",
+                              cursor: "pointer", transition: "all 0.15s ease",
+                              display: "flex", alignItems: "center", gap: 5,
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = T.redBg;
+                              e.currentTarget.style.borderColor = T.red;
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = T.white;
+                              e.currentTarget.style.borderColor = T.grey200;
+                            }}
+                          >
+                            View Invalid
+                          </button>
+                        ) : (
+                          <span style={{ fontSize: 12.5, fontWeight: 600, color: T.green }}>All Valid ✓</span>
+                        )}
                       </td>
                     </tr>
                   );

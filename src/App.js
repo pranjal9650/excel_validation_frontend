@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -34,9 +34,10 @@ import {
   ChevronLeft,
   ChevronRight,
   Bell,
-  Search,
   Moon,
   Sun,
+  Monitor,
+  Check,
 } from "lucide-react";
 
 /* ─── Design tokens ──────────────────────────────────────────── */
@@ -53,6 +54,38 @@ const T = {
   textNav:   "rgba(255,255,255,0.80)",
 };
 
+/* ─── Theme tokens ───────────────────────────────────────────── */
+const THEME_TOKENS = {
+  light: {
+    bg:         "#F4F4F5",
+    surface:    "#FFFFFF",
+    border:     "#E4E4E7",
+    text:       "#111111",
+    muted:      "#71717A",
+    headerBg:   "#FFFFFF",
+    headerBorder: "#E4E4E7",
+    inputBg:    "#F4F4F5",
+  },
+  dark: {
+    bg:         "#0F0F0F",
+    surface:    "#1A1A1A",
+    border:     "#2A2A2A",
+    text:       "#F4F4F5",
+    muted:      "#A1A1AA",
+    headerBg:   "#111111",
+    headerBorder: "#2A2A2A",
+    inputBg:    "#222222",
+  },
+};
+
+/* ─── Resolve "system" to light or dark ─────────────────────── */
+function resolveTheme(pref) {
+  if (pref === "system") {
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  }
+  return pref;
+}
+
 /* ─── Nav items ──────────────────────────────────────────────── */
 const NAV_ITEMS = [
   { label: "Dashboard",       icon: LayoutDashboard, path: "/dashboard" },
@@ -61,7 +94,7 @@ const NAV_ITEMS = [
   { label: "Form Data",       icon: FileSpreadsheet,  path: "/form-data" },
   { label: "Analytics",       icon: BarChart2,        path: "/analytics" },
   { label: "Site Monitoring", icon: MapPin,           path: "/site-monitoring" },
-  { label: "Create Form", icon: FileSpreadsheet, path: "/create-form" },
+  { label: "Create Form",     icon: FileSpreadsheet,  path: "/create-form" },
 ];
 
 const PAGE_TITLES = {
@@ -71,7 +104,7 @@ const PAGE_TITLES = {
   "/form-data":       "Form Data",
   "/analytics":       "Analytics",
   "/site-monitoring": "Site Monitoring",
-  "/create-form": "Create Form",
+  "/create-form":     "Create Form",
 };
 
 /* ─── Sidebar nav link ───────────────────────────────────────── */
@@ -115,12 +148,133 @@ function SideNavLink({ item, collapsed }) {
   );
 }
 
+/* ─── Theme Dropdown ─────────────────────────────────────────── */
+function ThemeDropdown({ themePref, setThemePref, themeTokens }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  /* Close on outside click */
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const resolved = resolveTheme(themePref);
+
+  const options = [
+    { value: "light",  label: "Light",  icon: Sun },
+    { value: "dark",   label: "Dark",   icon: Moon },
+    { value: "system", label: "System", icon: Monitor },
+  ];
+
+  const ActiveIcon = resolved === "dark" ? Moon : Sun;
+
+  return (
+    <div ref={ref} style={{ position: "relative" }}>
+      {/* Trigger button */}
+      <button
+        onClick={() => setOpen((o) => !o)}
+        aria-label="Theme"
+        style={{
+          width: 34, height: 34, borderRadius: 8,
+          border: `1px solid ${themeTokens.border}`,
+          background: open ? themeTokens.inputBg : themeTokens.surface,
+          color: themeTokens.muted,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          cursor: "pointer", transition: "all 0.15s ease", padding: 0,
+        }}
+        onMouseEnter={(e) => { e.currentTarget.style.background = themeTokens.inputBg; }}
+        onMouseLeave={(e) => { if (!open) e.currentTarget.style.background = themeTokens.surface; }}
+      >
+        <ActiveIcon size={16} />
+      </button>
+
+      {/* Dropdown */}
+      {open && (
+        <div style={{
+          position: "absolute",
+          top: "calc(100% + 8px)",
+          right: 0,
+          width: 168,
+          background: themeTokens.surface,
+          border: `1px solid ${themeTokens.border}`,
+          borderRadius: 12,
+          boxShadow: "0 8px 30px rgba(0,0,0,0.14)",
+          zIndex: 300,
+          overflow: "hidden",
+          animation: "fadeInDown 0.15s ease",
+        }}>
+          {options.map((opt) => {
+            const Icon = opt.icon;
+            const isActive = themePref === opt.value;
+            return (
+              <button
+                key={opt.value}
+                onClick={() => { setThemePref(opt.value); setOpen(false); }}
+                style={{
+                  width: "100%",
+                  display: "flex", alignItems: "center", gap: 10,
+                  padding: "10px 14px",
+                  border: "none",
+                  background: isActive ? (resolved === "dark" ? "rgba(255,255,255,0.06)" : T.grey100) : "transparent",
+                  color: isActive ? themeTokens.text : themeTokens.muted,
+                  fontSize: 13.5,
+                  fontWeight: isActive ? 600 : 400,
+                  fontFamily: "'DM Sans', sans-serif",
+                  cursor: "pointer",
+                  textAlign: "left",
+                  transition: "background 0.12s ease",
+                }}
+                onMouseEnter={(e) => {
+                  if (!isActive) e.currentTarget.style.background = resolved === "dark" ? "rgba(255,255,255,0.05)" : T.grey100;
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive) e.currentTarget.style.background = "transparent";
+                }}
+              >
+                <Icon size={15} style={{ flexShrink: 0 }} />
+                <span style={{ flex: 1 }}>{opt.label}</span>
+                {isActive && <Check size={13} color={T.red} />}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ─── Layout ─────────────────────────────────────────────────── */
 const Layout = () => {
   const navigate  = useNavigate();
   const location  = useLocation();
   const [collapsed, setCollapsed] = useState(false);
-  const [theme, setTheme]         = useState("light");
+
+  /* Theme: stored in localStorage so it persists across reloads */
+  const [themePref, setThemePref] = useState(() => {
+    return localStorage.getItem("themePref") || "system";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("themePref", themePref);
+  }, [themePref]);
+
+  /* Listen for system preference changes when pref = "system" */
+  const [systemDark, setSystemDark] = useState(
+    () => window.matchMedia("(prefers-color-scheme: dark)").matches
+  );
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const handler = (e) => setSystemDark(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
+  const resolvedTheme = themePref === "system" ? (systemDark ? "dark" : "light") : themePref;
+  const th = THEME_TOKENS[resolvedTheme];
 
   const SIDEBAR_W = collapsed ? 64 : 228;
   const pageTitle = PAGE_TITLES[location.pathname] ?? "Excel Validator";
@@ -131,7 +285,12 @@ const Layout = () => {
   };
 
   return (
-    <div style={{ display: "flex", height: "100vh", overflow: "hidden", fontFamily: "'DM Sans', sans-serif" }}>
+    <div style={{
+      display: "flex", height: "100vh", overflow: "hidden",
+      fontFamily: "'DM Sans', sans-serif",
+      background: th.bg,
+      transition: "background 0.2s ease",
+    }}>
 
       {/* ── Sidebar ──────────────────────────────────────────── */}
       <aside style={{
@@ -217,49 +376,87 @@ const Layout = () => {
           alignItems: "center",
           height: 60,
           minHeight: 60,
-          background: T.white,
-          borderBottom: `1px solid ${T.grey200}`,
+          background: th.headerBg,
+          borderBottom: `1px solid ${th.headerBorder}`,
           padding: "0 24px",
           gap: 16,
           boxShadow: "0 1px 3px rgba(0,0,0,0.07)",
           zIndex: 50,
+          transition: "background 0.2s ease, border-color 0.2s ease",
         }}>
+
           {/* Left: page title */}
-          <div style={{ flex: "0 0 auto" }}>
-            <h1 style={{ fontSize: 16, fontWeight: 700, color: T.black, margin: 0, letterSpacing: -0.3 }}>
+          <div style={{ flex: 1 }}>
+            <h1 style={{ fontSize: 16, fontWeight: 700, color: th.text, margin: 0, letterSpacing: -0.3, transition: "color 0.2s ease" }}>
               {pageTitle}
             </h1>
           </div>
 
-          {/* Right: actions */}
-          <div style={{ flex: "0 0 auto", display: "flex", alignItems: "center", gap: 8 }}>
-            <IconBtn onClick={() => setTheme((t) => (t === "light" ? "dark" : "light"))} label="Theme">
-              {theme === "light" ? <Moon size={16} /> : <Sun size={16} />}
-            </IconBtn>
+          {/* Right: actions — Bell · Theme · PG avatar */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
 
+            {/* Bell with badge */}
             <div style={{ position: "relative" }}>
-              <IconBtn label="Notifications">
+              <button
+                aria-label="Notifications"
+                style={{
+                  width: 34, height: 34, borderRadius: 8,
+                  border: `1px solid ${th.border}`,
+                  background: th.surface,
+                  color: th.muted,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  cursor: "pointer", transition: "all 0.15s ease", padding: 0,
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = th.inputBg; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = th.surface; }}
+              >
                 <Bell size={16} />
-              </IconBtn>
+              </button>
               <span style={{
                 position: "absolute", top: 5, right: 5,
                 width: 14, height: 14, borderRadius: "50%",
                 background: T.red, color: T.white,
                 fontSize: 8.5, fontWeight: 700,
                 display: "flex", alignItems: "center", justifyContent: "center",
-                border: `2px solid ${T.white}`,
+                border: `2px solid ${th.headerBg}`,
+                pointerEvents: "none",
               }}>3</span>
             </div>
 
+            {/* Theme dropdown */}
+            <ThemeDropdown
+              themePref={themePref}
+              setThemePref={setThemePref}
+              themeTokens={th}
+            />
+
+            {/* Divider */}
+            <div style={{ width: 1, height: 22, background: th.border }} />
+
+            {/* PG Avatar — far right */}
             <div style={{
-              width: 34, height: 34, borderRadius: "50%",
-              background: T.red, color: T.white,
-              fontSize: 12, fontWeight: 700,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              letterSpacing: 0.5, cursor: "pointer",
-              boxShadow: `0 0 0 2px ${T.white}, 0 0 0 3.5px ${T.red}`,
+              display: "flex", alignItems: "center", gap: 8,
+              cursor: "pointer",
             }}>
-              PG
+              <div style={{
+                width: 34, height: 34, borderRadius: "50%",
+                background: T.red, color: T.white,
+                fontSize: 12, fontWeight: 700,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                letterSpacing: 0.5,
+                boxShadow: `0 0 0 2px ${th.headerBg}, 0 0 0 3.5px ${T.red}`,
+                flexShrink: 0,
+              }}>
+                PG
+              </div>
+              <span style={{
+                fontSize: 13.5, fontWeight: 600,
+                color: th.text,
+                transition: "color 0.2s ease",
+                whiteSpace: "nowrap",
+              }}>
+                Pranjal Gupta
+              </span>
             </div>
           </div>
         </header>
@@ -269,12 +466,13 @@ const Layout = () => {
           flex: 1,
           overflowY: "auto",
           padding: 28,
-          background: T.grey100,
+          background: th.bg,
+          transition: "background 0.2s ease",
         }}>
           <Routes>
             <Route path="/dashboard"       element={<Dashboard />} />
             <Route path="/upload"          element={<UploadPage />} />
-            <Route path="/create-form" element={<CreateForm />} />
+            <Route path="/create-form"     element={<CreateForm />} />
             <Route path="/history"         element={<History />} />
             <Route path="/form-data"       element={<FormData />} />
             <Route path="/analytics"       element={<Analytics />} />
@@ -283,6 +481,13 @@ const Layout = () => {
           </Routes>
         </main>
       </div>
+
+      <style>{`
+        @keyframes fadeInDown {
+          from { opacity: 0; transform: translateY(-6px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   );
 };
@@ -317,64 +522,6 @@ function LogoutBtn({ collapsed, onLogout }) {
     >
       <LogOut size={18} style={{ flexShrink: 0 }} />
       {!collapsed && <span>Logout</span>}
-    </button>
-  );
-}
-
-/* ─── Search bar ─────────────────────────────────────────────── */
-function SearchBar() {
-  const [focused, setFocused] = useState(false);
-  return (
-    <div style={{
-      display: "flex", alignItems: "center", gap: 8,
-      background: focused ? "#fff" : "#F4F4F5",
-      border: `1px solid ${focused ? "#CC0000" : "#E4E4E7"}`,
-      borderRadius: 10,
-      padding: "7px 12px",
-      width: 280,
-      transition: "all 0.15s ease",
-      boxShadow: focused ? "0 0 0 3px rgba(204,0,0,0.10)" : "none",
-    }}>
-      <Search size={14} style={{ color: "#999", flexShrink: 0 }} />
-      <input
-        type="text"
-        placeholder="Search…"
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-        style={{
-          flex: 1, border: "none", background: "transparent",
-          outline: "none", fontSize: 13.5,
-          fontFamily: "'DM Sans', sans-serif", color: "#111",
-        }}
-      />
-      <kbd style={{
-        fontSize: 10.5, color: "#aaa", background: "#E4E4E7",
-        borderRadius: 4, padding: "1px 5px", border: "1px solid #ddd",
-        fontFamily: "'DM Sans', sans-serif",
-      }}>⌘K</kbd>
-    </div>
-  );
-}
-
-/* ─── Icon button ────────────────────────────────────────────── */
-function IconBtn({ children, onClick, label }) {
-  const [hovered, setHovered] = useState(false);
-  return (
-    <button
-      onClick={onClick}
-      aria-label={label}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        width: 34, height: 34, borderRadius: 8,
-        border: "1px solid #E4E4E7",
-        background: hovered ? "#F4F4F5" : "#fff",
-        color: hovered ? "#111" : "#555",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        cursor: "pointer", transition: "all 0.15s ease", padding: 0,
-      }}
-    >
-      {children}
     </button>
   );
 }

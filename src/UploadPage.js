@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Upload, CheckCircle2, FileSpreadsheet, Loader2, AlertTriangle, ArrowRight, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import * as XLSX from "xlsx";
+import { fileStore } from "./utils/fileStore";
 
 const T = {
   red:      "#CC0000",
@@ -356,6 +357,10 @@ function UploadPage() {
           } else {
             sessionStorage.removeItem("prefill_columns");
           }
+
+          fileStore.file = file;
+          fileStore.formType = formType;
+          fileStore.date = selectedDate;
 
           setMissingForm(parsedName);
           setShowModal(true);

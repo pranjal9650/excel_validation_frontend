@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
-import { RefreshCw, Info } from "lucide-react";
 
 const BASE_URL = "http://127.0.0.1:8000";
 
@@ -45,30 +44,6 @@ const tdStyle = {
   whiteSpace: "nowrap",
 };
 
-function ToggleButton({ active, onClick, children }) {
-  const [hovered, setHovered] = useState(false);
-  return (
-    <button
-      onClick={onClick}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        padding: "9px 18px", borderRadius: 8,
-        border: `1px solid ${active ? T.red : T.grey200}`,
-        background: active ? T.red : hovered ? T.grey100 : T.white,
-        color: active ? T.white : hovered ? T.text : T.muted,
-        fontSize: 13, fontWeight: 600,
-        fontFamily: "'DM Sans', sans-serif",
-        cursor: "pointer", transition: "all 0.15s ease",
-        display: "flex", alignItems: "center", gap: 6,
-      }}
-    >
-      {children}
-    </button>
-  );
-}
-
-/* ─── Per-user accuracy mini bar ─────────────────────────────── */
 function MiniAccuracy({ valid, total }) {
   if (!total) return <span style={{ color: T.muted, fontSize: 12 }}>—</span>;
   const acc   = Math.round((valid / total) * 100);
@@ -86,41 +61,48 @@ function MiniAccuracy({ valid, total }) {
 function Analytics() {
   const [gridData, setGridData]                       = useState([]);
   const [allFormNames, setAllFormNames]               = useState([]);
-  const [formRules, setFormRules]                     = useState({});   // form → rules map from backend
+  const [formRules, setFormRules]                     = useState({});
   const [circleSummary, setCircleSummary]             = useState(null);
   const [monthYear, setMonthYear]                     = useState("");
   const [searchUsername, setSearchUsername]           = useState("");
   const [loading, setLoading]                         = useState(false);
-  const [refreshing, setRefreshing]                   = useState(false);
   const [showCircleAnalytics, setShowCircleAnalytics] = useState(false);
   const [searchFocused, setSearchFocused]             = useState(false);
 
-  // ── Fetch analytics and optionally form rules in parallel ──
-  const fetchAnalytics = useCallback(async (isRefresh = false) => {
-    if (isRefresh) setRefreshing(true);
-    else setLoading(true);
-
+  const fetchAnalytics = useCallback(async () => {
+    setLoading(true);
     try {
-      let url = `${BASE_URL}/ANALYTICS`;
-      if (monthYear) url += `?month=${monthYear}`;
+      const bust = `_t=${Date.now()}`;
+      let url = `${BASE_URL}/ANALYTICS?${bust}`;
+      if (monthYear) url += `&month=${monthYear}`;
 
       const [analyticsRes, rulesRes] = await Promise.allSettled([
         axios.get(url),
-        axios.get(`${BASE_URL}/GET-ALL-FORM-RULES`),   // optional endpoint — fails gracefully
+        axios.get(`${BASE_URL}/GET-ALL-FORM-RULES`),
       ]);
 
       if (analyticsRes.status === "fulfilled") processAnalytics(analyticsRes.value.data);
       if (rulesRes.status    === "fulfilled") setFormRules(rulesRes.value.data || {});
-
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   }, [monthYear]);
 
-  useEffect(() => { fetchAnalytics(); }, [fetchAnalytics]);
+  useEffect(() => {
+    fetchAnalytics();
+    localStorage.removeItem("rulesUpdatedAt");
+  }, [fetchAnalytics]);
+
+  useEffect(() => {
+    const handler = () => {
+      fetchAnalytics();
+      localStorage.removeItem("rulesUpdatedAt");
+    };
+    window.addEventListener("rulesUpdated", handler);
+    return () => window.removeEventListener("rulesUpdated", handler);
+  }, [fetchAnalytics]);
 
   const processAnalytics = (data) => {
     if (!Array.isArray(data)) return;
@@ -159,7 +141,6 @@ function Analytics() {
     setCircleSummary(circleMap);
   };
 
-  // ── Per-form column totals ──
   const colTotals = allFormNames.reduce((acc, name) => {
     const valid   = gridData.reduce((s, r) => s + (r.forms[name]?.valid   || 0), 0);
     const invalid = gridData.reduce((s, r) => s + (r.forms[name]?.invalid || 0), 0);
@@ -174,81 +155,244 @@ function Analytics() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24, fontFamily: "'DM Sans', sans-serif" }}>
 
-      {/* Page header */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
-        <div>
-          <h2 style={{ fontSize: 22, fontWeight: 800, color: T.text, letterSpacing: -0.5, margin: 0 }}>Analytics Dashboard</h2>
-          <p style={{ fontSize: 13.5, color: T.muted, marginTop: 4 }}>Detailed analytics and insights across all forms</p>
-        </div>
-        <button
-          onClick={() => fetchAnalytics(true)}
-          disabled={refreshing}
-          style={{
-            display: "flex", alignItems: "center", gap: 7,
-            padding: "9px 16px", borderRadius: 9,
-            border: `1px solid ${T.grey200}`,
-            background: T.white, color: T.muted,
-            fontSize: 13, fontWeight: 600,
-            fontFamily: "'DM Sans', sans-serif",
-            cursor: refreshing ? "not-allowed" : "pointer",
-            transition: "all 0.15s ease",
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.borderColor = T.red; e.currentTarget.style.color = T.red; e.currentTarget.style.background = T.redBg; }}
-          onMouseLeave={(e) => { e.currentTarget.style.borderColor = T.grey200; e.currentTarget.style.color = T.muted; e.currentTarget.style.background = T.white; }}
-        >
-          <RefreshCw size={14} style={{ animation: refreshing ? "spin 0.9s linear infinite" : "none" }} />
-          Refresh
-        </button>
-      </div>
-
       {/* ── Filters ── */}
       <div style={{
-        background: T.white, borderRadius: 14,
+        background: T.white,
+        borderRadius: 14,
         border: `1px solid ${T.grey200}`,
-        padding: "16px 20px",
-        boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-        display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center",
+        boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
+        overflow: "hidden",
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <label style={{ fontSize: 13, fontWeight: 600, color: T.muted, whiteSpace: "nowrap" }}>Month</label>
-          <input
-            type="month"
-            value={monthYear}
-            onChange={(e) => setMonthYear(e.target.value)}
+
+        {/* Row 1: Month filter + Apply */}
+        <div style={{
+          padding: "16px 20px",
+          borderBottom: `1px solid ${T.grey200}`,
+          display: "flex",
+          alignItems: "flex-end",
+          gap: 12,
+          flexWrap: "wrap",
+          background: T.white,
+        }}>
+
+          {/* Month picker group */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <label style={{
+              fontSize: 11,
+              fontWeight: 700,
+              color: T.muted,
+              textTransform: "uppercase",
+              letterSpacing: "0.7px",
+              display: "flex",
+              alignItems: "center",
+              gap: 5,
+            }}>
+              {/* calendar icon */}
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={T.muted} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
+              </svg>
+              Filter by Month
+            </label>
+
+            {/* Input wrapper — handles focus ring via ref-less inline handlers on wrapper */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                height: 38,
+                padding: "0 10px 0 12px",
+                borderRadius: 9,
+                border: `1.5px solid ${T.grey200}`,
+                background: T.grey100,
+                transition: "border-color 0.15s, box-shadow 0.15s, background 0.15s",
+              }}
+              onFocusCapture={(e) => {
+                e.currentTarget.style.borderColor = T.red;
+                e.currentTarget.style.background  = T.white;
+                e.currentTarget.style.boxShadow   = "0 0 0 3px rgba(204,0,0,0.09)";
+              }}
+              onBlurCapture={(e) => {
+                e.currentTarget.style.borderColor = T.grey200;
+                e.currentTarget.style.background  = T.grey100;
+                e.currentTarget.style.boxShadow   = "none";
+              }}
+            >
+              <input
+                type="month"
+                value={monthYear}
+                onChange={(e) => setMonthYear(e.target.value)}
+                style={{
+                  border: "none",
+                  background: "transparent",
+                  outline: "none",
+                  fontSize: 13.5,
+                  fontFamily: "'DM Sans', sans-serif",
+                  color: monthYear ? T.text : T.muted,
+                  cursor: "pointer",
+                  minWidth: 140,
+                  flex: 1,
+                }}
+              />
+
+              {/* Inline clear button — only when a month is selected */}
+              {monthYear && (
+                <button
+                  onClick={() => setMonthYear("")}
+                  title="Clear"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: 20,
+                    height: 20,
+                    borderRadius: "50%",
+                    border: "none",
+                    background: T.grey200,
+                    color: T.muted,
+                    cursor: "pointer",
+                    padding: 0,
+                    flexShrink: 0,
+                    transition: "background 0.12s, color 0.12s",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "#D4D4D8";
+                    e.currentTarget.style.color      = T.text;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = T.grey200;
+                    e.currentTarget.style.color      = T.muted;
+                  }}
+                >
+                  <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+                    <path d="M18 6 6 18M6 6l12 12"/>
+                  </svg>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Apply Filter button */}
+          <button
+            onClick={() => fetchAnalytics()}
             style={{
-              padding: "9px 13px", borderRadius: 8,
-              border: `1px solid ${T.grey200}`,
-              fontSize: 13.5, fontFamily: "'DM Sans', sans-serif",
-              background: T.grey100, color: T.text, outline: "none",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 7,
+              height: 38,
+              padding: "0 20px",
+              borderRadius: 9,
+              border: "none",
+              background: T.red,
+              color: T.white,
+              fontSize: 13.5,
+              fontWeight: 600,
+              fontFamily: "'DM Sans', sans-serif",
+              cursor: "pointer",
+              transition: "background 0.15s, box-shadow 0.15s, transform 0.15s",
+              letterSpacing: 0.1,
+              whiteSpace: "nowrap",
+              boxShadow: "0 1px 3px rgba(204,0,0,0.22)",
             }}
-            onFocus={(e) => { e.target.style.borderColor = T.red; e.target.style.boxShadow = "0 0 0 3px rgba(204,0,0,0.10)"; e.target.style.background = T.white; }}
-            onBlur={(e)  => { e.target.style.borderColor = T.grey200; e.target.style.boxShadow = "none"; e.target.style.background = T.grey100; }}
-          />
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background  = T.redDark;
+              e.currentTarget.style.boxShadow   = "0 4px 14px rgba(204,0,0,0.28)";
+              e.currentTarget.style.transform   = "translateY(-1px)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background  = T.red;
+              e.currentTarget.style.boxShadow   = "0 1px 3px rgba(204,0,0,0.22)";
+              e.currentTarget.style.transform   = "none";
+            }}
+            onMouseDown={(e)  => { e.currentTarget.style.transform = "scale(0.98)"; }}
+            onMouseUp={(e)    => { e.currentTarget.style.transform = "translateY(-1px)"; }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+            Apply Filter
+          </button>
         </div>
 
-        <button
-          onClick={() => fetchAnalytics(true)}
-          style={{
-            padding: "9px 18px", borderRadius: 8,
-            border: "none", background: T.red, color: T.white,
-            fontSize: 13, fontWeight: 600, fontFamily: "'DM Sans', sans-serif",
-            cursor: "pointer", transition: "background 0.15s, transform 0.15s",
-            display: "flex", alignItems: "center", gap: 6,
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = T.redDark; e.currentTarget.style.transform = "translateY(-1px)"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = T.red; e.currentTarget.style.transform = "none"; }}
-        >
-          🔍 Apply Filter
-        </button>
+        {/* Row 2: View toggle */}
+        <div style={{
+          padding: "10px 20px",
+          background: T.grey100,
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+        }}>
+          <span style={{
+            fontSize: 11,
+            fontWeight: 700,
+            color: T.muted,
+            textTransform: "uppercase",
+            letterSpacing: "0.7px",
+            marginRight: 4,
+          }}>
+            View
+          </span>
 
-        <div style={{ width: 1, height: 28, background: T.grey200 }} />
-
-        <ToggleButton active={!showCircleAnalytics} onClick={() => setShowCircleAnalytics(false)}>
-          📊 Form Analytics
-        </ToggleButton>
-        <ToggleButton active={showCircleAnalytics} onClick={() => setShowCircleAnalytics(true)}>
-          🌐 Circle Analytics
-        </ToggleButton>
+          {[
+            {
+              label: "Form Analytics",
+              value: false,
+              icon: (
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>
+                </svg>
+              ),
+            },
+            {
+              label: "Circle Analytics",
+              value: true,
+              icon: (
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                </svg>
+              ),
+            },
+          ].map(({ label, value, icon }) => {
+            const on = showCircleAnalytics === value;
+            return (
+              <button
+                key={label}
+                onClick={() => setShowCircleAnalytics(value)}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "0 14px",
+                  height: 32,
+                  borderRadius: 7,
+                  border: `1px solid ${on ? "rgba(204,0,0,0.22)" : T.grey200}`,
+                  background: on ? "rgba(204,0,0,0.07)" : T.white,
+                  color: on ? T.red : T.muted,
+                  fontSize: 12.5,
+                  fontWeight: on ? 700 : 500,
+                  fontFamily: "'DM Sans', sans-serif",
+                  cursor: "pointer",
+                  transition: "all 0.14s ease",
+                }}
+                onMouseEnter={(e) => {
+                  if (!on) {
+                    e.currentTarget.style.borderColor = "rgba(204,0,0,0.18)";
+                    e.currentTarget.style.color = T.red;
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!on) {
+                    e.currentTarget.style.borderColor = T.grey200;
+                    e.currentTarget.style.color = T.muted;
+                  }
+                }}
+              >
+                {icon}
+                {label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* ── Loader ── */}
@@ -329,7 +473,6 @@ function Analytics() {
                             <span style={{ fontSize: 10, fontWeight: 700, color: accColor }}>
                               {col.total > 0 ? `${acc}% accuracy` : "No data"}
                             </span>
-                            {/* Rule type chips from saved rules */}
                             {rules && Object.keys(rules).length > 0 && (
                               <div style={{ display: "flex", gap: 3, flexWrap: "wrap", justifyContent: "center", marginTop: 2 }}>
                                 {Object.entries(rules).slice(0, 3).map(([col, rule]) => (
@@ -370,7 +513,6 @@ function Analytics() {
                         onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(204,0,0,0.03)")}
                         onMouseLeave={(e) => (e.currentTarget.style.background = i % 2 === 0 ? T.white : T.grey100)}
                       >
-                        {/* Username with avatar */}
                         <td style={{ ...tdStyle, fontWeight: 600 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                             <div style={{

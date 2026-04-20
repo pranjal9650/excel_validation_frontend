@@ -1,67 +1,45 @@
 import React, { useState, useEffect } from "react";
-import { FileSpreadsheet, Search, ChevronDown, X } from "lucide-react";
+import { Search, X, Database } from "lucide-react";
 
 const T = {
-  red:      "#CC0000",
-  redDark:  "#A30000",
-  black:    "#111111",
-  grey200:  "#E4E4E7",
-  grey100:  "#F4F4F5",
-  white:    "#FFFFFF",
-  green:    "#059669",
-  greenBg:  "rgba(5,150,105,0.08)",
-  redBg:    "rgba(204,0,0,0.07)",
-  text:     "#111111",
-  muted:    "#71717A",
+  red:         "#CC0000",
+  redDark:     "#A30000",
+  redBg:       "rgba(204,0,0,0.06)",
+  redBorder:   "rgba(204,0,0,0.18)",
+  black:       "#111111",
+  border:      "#EBEBEB",
+  borderHover: "#D4D4D4",
+  bg:          "#F7F7F5",
+  white:       "#FFFFFF",
+  green:       "#059669",
+  greenBg:     "rgba(5,150,105,0.07)",
+  greenBorder: "rgba(5,150,105,0.18)",
+  text:        "#0A0A0A",
+  textSub:     "#404040",
+  muted:       "#888",
 };
 
-/* ─── Badge ──────────────────────────────────────────────────── */
 function StatusBadge({ status }) {
   const isValid = String(status).toLowerCase() === "valid";
   return (
     <span style={{
-      display: "inline-flex",
-      alignItems: "center",
-      padding: "3px 10px",
-      borderRadius: 99,
-      fontSize: 12,
-      fontWeight: 600,
+      display: "inline-flex", alignItems: "center", gap: 5,
+      padding: "3px 9px", borderRadius: 5,
+      fontSize: 11.5, fontWeight: 600, letterSpacing: "0.1px",
       background: isValid ? T.greenBg : T.redBg,
       color: isValid ? T.green : T.red,
+      border: `1px solid ${isValid ? T.greenBorder : T.redBorder}`,
     }}>
+      <span style={{
+        width: 5, height: 5, borderRadius: "50%", flexShrink: 0,
+        background: isValid ? T.green : T.red,
+      }} />
       {isValid ? "Valid" : "Invalid"}
     </span>
   );
 }
 
-/* ─── Form tag chip ──────────────────────────────────────────── */
-function FormChip({ label, onRemove }) {
-  const [hovered, setHovered] = useState(false);
-  return (
-    <span
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        display: "inline-flex", alignItems: "center", gap: 5,
-        padding: "4px 10px 4px 12px", borderRadius: 99,
-        fontSize: 12.5, fontWeight: 600,
-        background: hovered ? T.redBg : "rgba(204,0,0,0.06)",
-        color: T.red,
-        border: `1px solid rgba(204,0,0,0.18)`,
-        cursor: "pointer",
-        transition: "all 0.15s ease",
-        userSelect: "none",
-      }}
-      onClick={onRemove}
-    >
-      {label}
-      <X size={11} />
-    </span>
-  );
-}
-
-/* ─── Main component ─────────────────────────────────────────── */
-function FormData() {
+export default function FormData() {
   const [allFormTypes, setAllFormTypes]     = useState([]);
   const [selectedForms, setSelectedForms]   = useState([]);
   const [data, setData]                     = useState([]);
@@ -71,27 +49,24 @@ function FormData() {
   const [searchUsername, setSearchUsername] = useState("");
   const [searchFocused, setSearchFocused]   = useState(false);
 
-  // ── Fetch all available form types from backend on mount ──
   useEffect(() => {
     fetch("http://127.0.0.1:8000/GET-FORM-NAMES")
       .then((r) => r.json())
-      .then((data) => {
-        if (Array.isArray(data)) {
-          // Filter out "Others" — it's a meta-option, not a real form
-          setAllFormTypes(data.filter((f) => f !== "Others"));
-        }
-      })
+      .then((d) => { if (Array.isArray(d)) setAllFormTypes(d.filter((f) => f !== "Others")); })
       .catch(() => setAllFormTypes([]))
       .finally(() => setFormsLoading(false));
   }, []);
 
-  /* ── Form selection ── */
+  /* re-fetch visible data whenever rules change */
+  useEffect(() => {
+    const handler = () => { if (data.length > 0) fetchData(); };
+    window.addEventListener("rulesUpdated", handler);
+    return () => window.removeEventListener("rulesUpdated", handler);
+  }, [data.length, selectedForms]); // eslint-disable-line
+
   const toggleForm = (value) => {
-    if (value === "") return;
     if (value === "ALL") {
-      setSelectedForms(
-        selectedForms.length === allFormTypes.length ? [] : [...allFormTypes]
-      );
+      setSelectedForms(selectedForms.length === allFormTypes.length ? [] : [...allFormTypes]);
       return;
     }
     setSelectedForms((prev) =>
@@ -99,237 +74,268 @@ function FormData() {
     );
   };
 
-  /* ── Fetch records ── */
   const fetchData = async () => {
-    if (!selectedForms.length) {
-      setMessage("Please select at least one form type.");
-      return;
-    }
-    setLoading(true);
-    setMessage("");
-    setData([]);
+    if (!selectedForms.length) { setMessage("Select at least one form type."); return; }
+    setLoading(true); setMessage(""); setData([]);
     try {
-      const queryForms =
-        selectedForms.length === allFormTypes.length
-          ? "ALL"
-          : selectedForms.join(",");
-
-      const res    = await fetch(`http://127.0.0.1:8000/FORM-DATA-MULTI?forms=${encodeURIComponent(queryForms)}`);
+      const q = selectedForms.length === allFormTypes.length ? "ALL" : selectedForms.join(",");
+      const res = await fetch(`http://127.0.0.1:8000/FORM-DATA-MULTI?forms=${encodeURIComponent(q)}`);
       const result = await res.json();
-
-      if (!Array.isArray(result) || result.length === 0) {
-        setMessage("No records found for the selected forms.");
-        setData([]);
-      } else {
-        setData(result);
-      }
-    } catch {
-      setMessage("Unable to reach the server. Please try again.");
-    }
+      if (!Array.isArray(result) || result.length === 0) setMessage("No records found.");
+      else setData(result);
+    } catch { setMessage("Unable to reach the server. Please try again."); }
     setLoading(false);
   };
 
-  /* ── Filtered rows ── */
-  const filteredData = data.filter((row) => {
-    if (!searchUsername) return true;
-    return String(row.username || "").toLowerCase().includes(searchUsername.toLowerCase());
-  });
+  const filteredData = data.filter((row) =>
+    !searchUsername || String(row.username || "").toLowerCase().includes(searchUsername.toLowerCase())
+  );
+  const visibleRows  = filteredData.slice(0, 200);
+  const validCount   = filteredData.filter((r) => String(r.status).toLowerCase() === "valid").length;
+  const invalidCount = filteredData.length - validCount;
+  const allSelected  = selectedForms.length === allFormTypes.length && allFormTypes.length > 0;
 
-  const visibleRows = filteredData.slice(0, 200);
-
-  /* ─────────────────── RENDER ─────────────────────────────── */
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 24, fontFamily: "'DM Sans', sans-serif" }}>
+    <div style={{ fontFamily: "'DM Sans', sans-serif", display: "flex", flexDirection: "column", gap: 16 }}>
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+      `}</style>
 
-      {/* Page header */}
-      <div>
-        <h2 style={{ fontSize: 22, fontWeight: 800, color: T.text, letterSpacing: -0.5, margin: 0 }}>
-          Form Data Viewer
-        </h2>
-        <p style={{ fontSize: 13.5, color: T.muted, marginTop: 4 }}>
-          View and filter submissions across all form types
-        </p>
-      </div>
-
-      {/* ── Filter card ── */}
+      {/* ── Form Selector ─────────────────────────────────────── */}
       <div style={{
         background: T.white,
+        border: `1px solid ${T.border}`,
         borderRadius: 14,
-        border: `1px solid ${T.grey200}`,
-        padding: "22px 24px",
-        boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+        overflow: "hidden",
+        boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
       }}>
-        {/* Card header */}
+        {/* Header row */}
         <div style={{
-          display: "flex", alignItems: "center", gap: 10,
-          paddingBottom: 16, borderBottom: `1px solid ${T.grey200}`, marginBottom: 18,
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "14px 20px",
+          borderBottom: `1px solid ${T.border}`,
         }}>
-          <div style={{
-            width: 34, height: 34, borderRadius: 9,
-            background: T.redBg,
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            <FileSpreadsheet size={17} color={T.red} />
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: T.text }}>Select Forms</span>
+            {selectedForms.length > 0 && (
+              <span style={{
+                fontSize: 11, fontWeight: 700, color: T.red,
+                background: T.redBg, border: `1px solid ${T.redBorder}`,
+                padding: "1px 7px", borderRadius: 99,
+              }}>
+                {selectedForms.length} selected
+              </span>
+            )}
           </div>
-          <div>
-            <p style={{ fontSize: 14.5, fontWeight: 700, color: T.text, margin: 0 }}>Select Forms</p>
-            <p style={{ fontSize: 12, color: T.muted, margin: 0 }}>
-              {formsLoading ? "Loading form types…" : `${allFormTypes.length} form type(s) available`}
-            </p>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            {selectedForms.length > 0 && (
+              <button
+                onClick={() => setSelectedForms([])}
+                style={{
+                  fontSize: 12, color: T.muted, background: "none",
+                  border: "none", cursor: "pointer", padding: "4px 8px",
+                  fontFamily: "'DM Sans', sans-serif",
+                  display: "flex", alignItems: "center", gap: 4,
+                }}
+              >
+                <X size={11} /> Clear
+              </button>
+            )}
+            {!formsLoading && allFormTypes.length > 0 && (
+              <button
+                onClick={() => toggleForm("ALL")}
+                style={{
+                  fontSize: 12, fontWeight: 600, cursor: "pointer",
+                  padding: "5px 12px", borderRadius: 7,
+                  border: `1px solid ${allSelected ? T.redBorder : T.border}`,
+                  background: allSelected ? T.redBg : T.bg,
+                  color: allSelected ? T.red : T.textSub,
+                  fontFamily: "'DM Sans', sans-serif",
+                  transition: "all 0.14s ease",
+                }}
+              >
+                {allSelected ? "Deselect All" : "Select All"}
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Dropdown */}
-        <div style={{ position: "relative", marginBottom: 14 }}>
-          <select
-            onChange={(e) => toggleForm(e.target.value)}
-            value=""
-            disabled={formsLoading}
+        {/* Pills grid */}
+        <div style={{ padding: "16px 20px" }}>
+          {formsLoading ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 8, color: T.muted, fontSize: 13 }}>
+              <div style={{ width: 14, height: 14, borderRadius: "50%", border: `2px solid ${T.border}`, borderTop: `2px solid ${T.red}`, animation: "spin 0.8s linear infinite" }} />
+              Loading form types…
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {allFormTypes.map((f) => {
+                const on = selectedForms.includes(f);
+                return (
+                  <button key={f} onClick={() => toggleForm(f)} style={{
+                    padding: "7px 15px",
+                    borderRadius: 8,
+                    border: `1px solid ${on ? T.redBorder : T.border}`,
+                    background: on ? T.redBg : T.bg,
+                    color: on ? T.red : T.textSub,
+                    fontSize: 13, fontWeight: on ? 700 : 500,
+                    fontFamily: "'DM Sans', sans-serif",
+                    cursor: "pointer", transition: "all 0.14s ease",
+                    display: "flex", alignItems: "center", gap: 5,
+                  }}
+                  onMouseEnter={(e) => { if (!on) { e.currentTarget.style.borderColor = T.redBorder; e.currentTarget.style.color = T.red; } }}
+                  onMouseLeave={(e) => { if (!on) { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.color = T.textSub; } }}
+                  >
+                    {on && <span style={{ fontSize: 9 }}>✓</span>}
+                    {f}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Action row */}
+        <div style={{
+          padding: "16px 20px",
+          borderTop: `1px solid ${T.border}`,
+          background: T.white,
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+        }}>
+          <button
+            onClick={fetchData}
+            disabled={loading || formsLoading || selectedForms.length === 0}
             style={{
-              width: "100%",
-              padding: "10px 40px 10px 14px",
-              borderRadius: 9,
-              border: `1px solid ${T.grey200}`,
-              fontSize: 13.5,
+              display: "inline-flex", alignItems: "center", gap: 8,
+              padding: "0 20px", height: 38, borderRadius: 8,
+              background: loading || selectedForms.length === 0
+                ? "#F4F4F5"
+                : `linear-gradient(135deg, ${T.red} 0%, ${T.redDark} 100%)`,
+              border: loading || selectedForms.length === 0
+                ? "1px solid #E4E4E7"
+                : "1px solid rgba(0,0,0,0.12)",
+              boxShadow: loading || selectedForms.length === 0
+                ? "none"
+                : "0 1px 2px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.08)",
+              color: loading || selectedForms.length === 0 ? "#A1A1AA" : T.white,
+              fontSize: 13, fontWeight: 600, letterSpacing: "-0.1px",
               fontFamily: "'DM Sans', sans-serif",
-              color: T.text,
-              background: T.grey100,
-              outline: "none",
-              appearance: "none",
-              cursor: formsLoading ? "not-allowed" : "pointer",
-              transition: "border-color 0.15s, box-shadow 0.15s",
+              cursor: loading || selectedForms.length === 0 ? "not-allowed" : "pointer",
+              transition: "all 0.15s ease",
+              whiteSpace: "nowrap",
             }}
-            onFocus={(e) => {
-              e.target.style.borderColor = T.red;
-              e.target.style.boxShadow   = "0 0 0 3px rgba(204,0,0,0.10)";
-              e.target.style.background  = T.white;
+            onMouseEnter={(e) => {
+              if (!loading && selectedForms.length > 0) {
+                e.currentTarget.style.boxShadow = "0 4px 12px rgba(204,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.08)";
+                e.currentTarget.style.transform = "translateY(-1px)";
+              }
             }}
-            onBlur={(e) => {
-              e.target.style.borderColor = T.grey200;
-              e.target.style.boxShadow   = "none";
-              e.target.style.background  = T.grey100;
+            onMouseLeave={(e) => {
+              e.currentTarget.style.boxShadow = loading || selectedForms.length === 0
+                ? "none"
+                : "0 1px 2px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.08)";
+              e.currentTarget.style.transform = "none";
             }}
           >
-            <option value="">— Select a form —</option>
-            {allFormTypes.length > 0 && (
-              <option value="ALL">⭐ Select All ({allFormTypes.length} forms)</option>
+            {loading ? (
+              <>
+                <div style={{ width: 13, height: 13, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.25)", borderTop: "2px solid rgba(255,255,255,0.85)", animation: "spin 0.75s linear infinite", flexShrink: 0 }} />
+                <span>Fetching…</span>
+              </>
+            ) : (
+              <>
+                <Database size={13} style={{ flexShrink: 0, opacity: selectedForms.length === 0 ? 0.4 : 1 }} />
+                <span>Fetch Records</span>
+              </>
             )}
-            {allFormTypes.map((f) => (
-              <option key={f} value={f} disabled={selectedForms.includes(f)}>
-                {f} {selectedForms.includes(f) ? "✓" : ""}
-              </option>
-            ))}
-          </select>
-          <ChevronDown
-            size={15} color={T.muted}
-            style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}
-          />
+          </button>
+
+          {!loading && selectedForms.length > 0 && (
+            <span style={{ fontSize: 12, color: T.muted, letterSpacing: "0.1px" }}>
+              {selectedForms.length === allFormTypes.length
+                ? "All form types selected"
+                : `${selectedForms.length} of ${allFormTypes.length} form types`}
+            </span>
+          )}
         </div>
-
-        {/* Selected chips */}
-        {selectedForms.length > 0 && (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 18 }}>
-            {selectedForms.map((f) => (
-              <FormChip key={f} label={f} onRemove={() => toggleForm(f)} />
-            ))}
-          </div>
-        )}
-
-        {/* Fetch button */}
-        <button
-          onClick={fetchData}
-          disabled={loading || formsLoading || selectedForms.length === 0}
-          style={{
-            width: "100%",
-            padding: "12px",
-            background: loading || selectedForms.length === 0 ? "#e5e5e5" : T.red,
-            border: "none",
-            borderRadius: 9,
-            color: loading || selectedForms.length === 0 ? T.muted : T.white,
-            fontSize: 14,
-            fontWeight: 700,
-            fontFamily: "'DM Sans', sans-serif",
-            cursor: loading || selectedForms.length === 0 ? "not-allowed" : "pointer",
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-            transition: "background 0.15s, transform 0.15s, box-shadow 0.15s",
-          }}
-          onMouseEnter={(e) => {
-            if (!loading && selectedForms.length > 0) {
-              e.currentTarget.style.background  = T.redDark;
-              e.currentTarget.style.transform   = "translateY(-1px)";
-              e.currentTarget.style.boxShadow   = "0 6px 18px rgba(204,0,0,0.28)";
-            }
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = loading || selectedForms.length === 0 ? "#e5e5e5" : T.red;
-            e.currentTarget.style.transform  = "none";
-            e.currentTarget.style.boxShadow  = "none";
-          }}
-        >
-          {loading ? (
-            <>
-              <div style={{
-                width: 14, height: 14, borderRadius: "50%",
-                border: `2px solid rgba(0,0,0,0.15)`,
-                borderTop: `2px solid ${T.muted}`,
-                animation: "spin 0.8s linear infinite",
-              }} />
-              Loading...
-            </>
-          ) : "Fetch Records"}
-        </button>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
 
-      {/* Error / empty message */}
+      {/* Error message */}
       {message && (
         <div style={{
-          padding: "12px 16px", borderRadius: 9,
-          background: T.redBg, border: `1px solid rgba(204,0,0,0.18)`,
-          color: T.red, fontSize: 13.5, fontWeight: 500,
+          padding: "11px 16px", borderRadius: 9,
+          background: T.redBg, border: `1px solid ${T.redBorder}`,
           borderLeft: `3px solid ${T.red}`,
+          color: T.red, fontSize: 13.5, fontWeight: 500,
         }}>
           {message}
         </div>
       )}
 
-      {/* Results table */}
+      {/* ── Results Table ──────────────────────────────────────── */}
       {data.length > 0 && !loading && (
         <div style={{
-          background: T.white, borderRadius: 14,
-          border: `1px solid ${T.grey200}`,
+          background: T.white,
+          border: `1px solid ${T.border}`,
+          borderRadius: 14,
           overflow: "hidden",
-          boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+          boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+          animation: "fadeIn 0.25s ease",
         }}>
-          {/* Table header bar */}
+          {/* Table topbar */}
           <div style={{
-            padding: "18px 24px",
-            borderBottom: `1px solid ${T.grey200}`,
+            padding: "14px 20px",
+            borderBottom: `1px solid ${T.border}`,
             display: "flex", alignItems: "center",
-            justifyContent: "space-between",
-            flexWrap: "wrap", gap: 12,
+            justifyContent: "space-between", gap: 12, flexWrap: "wrap",
           }}>
-            <div>
-              <h3 style={{ fontSize: 15, fontWeight: 700, color: T.text, margin: 0 }}>Results</h3>
-              <p style={{ fontSize: 12.5, color: T.muted, marginTop: 2 }}>
-                Showing {visibleRows.length} of {filteredData.length} records
-                {data.length !== filteredData.length && ` (${data.length} total)`}
-              </p>
+            {/* Left: counts */}
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: T.text }}>
+                {filteredData.length > 200
+                  ? `Showing 200 of ${filteredData.length.toLocaleString()} records`
+                  : `${filteredData.length.toLocaleString()} record${filteredData.length !== 1 ? "s" : ""}`}
+              </span>
+              <div style={{ width: 1, height: 14, background: T.border }} />
+              <span style={{
+                fontSize: 12, fontWeight: 600, color: T.green,
+                background: T.greenBg, border: `1px solid ${T.greenBorder}`,
+                padding: "2px 9px", borderRadius: 5,
+              }}>
+                ✓ {validCount.toLocaleString()} valid
+              </span>
+              <span style={{
+                fontSize: 12, fontWeight: 600, color: T.red,
+                background: T.redBg, border: `1px solid ${T.redBorder}`,
+                padding: "2px 9px", borderRadius: 5,
+              }}>
+                ✕ {invalidCount.toLocaleString()} invalid
+              </span>
+              {filteredData.length > 200 && (
+                <span style={{
+                  fontSize: 12, color: T.muted,
+                  background: T.bg, border: `1px solid ${T.border}`,
+                  padding: "2px 9px", borderRadius: 5,
+                }}>
+                  Use search to narrow results
+                </span>
+              )}
             </div>
 
-            {/* Search */}
+            {/* Right: search */}
             <div style={{
-              display: "flex", alignItems: "center", gap: 8,
-              background: searchFocused ? T.white : T.grey100,
-              border: `1px solid ${searchFocused ? T.red : T.grey200}`,
-              borderRadius: 9, padding: "8px 12px", width: 240,
+              display: "flex", alignItems: "center", gap: 7,
+              background: searchFocused ? T.white : T.bg,
+              border: `1px solid ${searchFocused ? T.red : T.border}`,
+              borderRadius: 8, padding: "7px 11px", minWidth: 220,
               transition: "all 0.15s ease",
-              boxShadow: searchFocused ? "0 0 0 3px rgba(204,0,0,0.10)" : "none",
+              boxShadow: searchFocused ? "0 0 0 3px rgba(204,0,0,0.08)" : "none",
             }}>
               <Search size={13} color={T.muted} style={{ flexShrink: 0 }} />
               <input
                 type="text"
-                placeholder="Search by username…"
+                placeholder="Search username…"
                 value={searchUsername}
                 onChange={(e) => setSearchUsername(e.target.value)}
                 onFocus={() => setSearchFocused(true)}
@@ -338,6 +344,7 @@ function FormData() {
                   flex: 1, border: "none", background: "transparent",
                   outline: "none", fontSize: 13,
                   fontFamily: "'DM Sans', sans-serif", color: T.text,
+                  minWidth: 0,
                 }}
               />
               {searchUsername && (
@@ -348,63 +355,88 @@ function FormData() {
           </div>
 
           {/* Table */}
-          <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13.5, minWidth: 600 }}>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 580 }}>
               <thead>
-                <tr style={{ background: T.grey100 }}>
-                  {["#", "Form Type", "Username", "Status", "Date"].map((h) => (
-                    <th key={h} style={{
-                      padding: "10px 20px", textAlign: "left",
-                      fontSize: 11.5, fontWeight: 600,
-                      textTransform: "uppercase", letterSpacing: 0.6,
-                      color: T.muted, whiteSpace: "nowrap",
-                      borderBottom: `1px solid ${T.grey200}`,
-                    }}>{h}</th>
-                  ))}
+                <tr>
+                  <th style={thStyle}>#</th>
+                  <th style={thStyle}>Form Type</th>
+                  <th style={thStyle}>Username</th>
+                  <th style={thStyle}>Status</th>
+                  <th style={thStyle}>Date</th>
                 </tr>
               </thead>
               <tbody>
-                {visibleRows.map((row, i) => (
-                  <tr
-                    key={i}
-                    style={{ background: i % 2 === 0 ? T.white : T.grey100 }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(204,0,0,0.03)")}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = i % 2 === 0 ? T.white : T.grey100)}
-                  >
-                    <td style={{ padding: "12px 20px", color: T.muted, fontSize: 12.5, borderBottom: `1px solid ${T.grey200}` }}>
-                      {i + 1}
-                    </td>
-                    <td style={{ padding: "12px 20px", color: T.text, fontWeight: 500, borderBottom: `1px solid ${T.grey200}` }}>
-                      {row.form_type}
-                    </td>
-                    <td style={{ padding: "12px 20px", color: T.text, borderBottom: `1px solid ${T.grey200}` }}>
-                      {row.username || "N/A"}
-                    </td>
-                    <td style={{ padding: "12px 20px", borderBottom: `1px solid ${T.grey200}` }}>
-                      <StatusBadge status={row.status} />
-                    </td>
-                    <td style={{ padding: "12px 20px", color: T.muted, fontSize: 13, borderBottom: `1px solid ${T.grey200}` }}>
-                      {row.date}
-                    </td>
-                  </tr>
-                ))}
+                {visibleRows.map((row, i) => {
+                  const isLast = i === visibleRows.length - 1;
+                  const isValid = String(row.status).toLowerCase() === "valid";
+                  return (
+                    <tr
+                      key={i}
+                      style={{ background: T.white, transition: "background 0.1s" }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = T.bg}
+                      onMouseLeave={(e) => e.currentTarget.style.background = T.white}
+                    >
+                      <td style={{ ...tdStyle, borderBottom: isLast ? "none" : `1px solid ${T.border}`, color: T.muted, fontSize: 12, width: 48 }}>
+                        {i + 1}
+                      </td>
+                      <td style={{ ...tdStyle, borderBottom: isLast ? "none" : `1px solid ${T.border}` }}>
+                        <span style={{
+                          fontSize: 13, fontWeight: 600, color: T.textSub,
+                          background: T.bg, border: `1px solid ${T.border}`,
+                          padding: "3px 9px", borderRadius: 5, whiteSpace: "nowrap",
+                        }}>
+                          {row.form_type}
+                        </span>
+                      </td>
+                      <td style={{ ...tdStyle, borderBottom: isLast ? "none" : `1px solid ${T.border}` }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+                          <div style={{
+                            width: 28, height: 28, borderRadius: "50%", flexShrink: 0,
+                            background: isValid ? T.greenBg : T.redBg,
+                            border: `1px solid ${isValid ? T.greenBorder : T.redBorder}`,
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            fontSize: 11, fontWeight: 800,
+                            color: isValid ? T.green : T.red,
+                          }}>
+                            {(row.username || "?")[0].toUpperCase()}
+                          </div>
+                          <span style={{ fontSize: 13.5, fontWeight: 500, color: T.text }}>
+                            {row.username || "N/A"}
+                          </span>
+                        </div>
+                      </td>
+                      <td style={{ ...tdStyle, borderBottom: isLast ? "none" : `1px solid ${T.border}` }}>
+                        <StatusBadge status={row.status} />
+                      </td>
+                      <td style={{ ...tdStyle, borderBottom: isLast ? "none" : `1px solid ${T.border}`, color: T.muted, fontSize: 13 }}>
+                        {row.date}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
-
-          {filteredData.length > 200 && (
-            <div style={{
-              padding: "12px 24px",
-              borderTop: `1px solid ${T.grey200}`,
-              fontSize: 12.5, color: T.muted, textAlign: "center",
-            }}>
-              Showing first 200 of {filteredData.length} records. Use search to narrow results.
-            </div>
-          )}
         </div>
       )}
     </div>
   );
 }
 
-export default FormData;
+const thStyle = {
+  padding: "10px 20px",
+  textAlign: "left",
+  fontSize: 10.5,
+  fontWeight: 700,
+  textTransform: "uppercase",
+  letterSpacing: "0.8px",
+  color: "#A0A0A0",
+  borderBottom: "1px solid #EBEBEB",
+  background: "#FAFAF9",
+  whiteSpace: "nowrap",
+};
+
+const tdStyle = {
+  padding: "12px 20px",
+};

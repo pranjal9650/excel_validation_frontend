@@ -1,18 +1,17 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import logo from "./assets/logo.png";
+import logoDark from "./assets/logo-dark.png";
 
-/* ─── Design tokens (mirrors App.js / Dashboard.js) ─────────── */
 const T = {
-  red:      "#CC0000",
-  redDark:  "#A30000",
-  black:    "#111111",
-  grey200:  "#E4E4E7",
-  grey100:  "#F4F4F5",
-  white:    "#FFFFFF",
-  text:     "#111111",
-  muted:    "#71717A",
-  redBg:    "rgba(204,0,0,0.07)",
+  red:     "#CC0000",
+  redDark: "#A30000",
+  black:   "#111111",
+  grey50:  "#F9F9F9",
+  grey100: "#F2F0EB",
+  grey200: "#E5E2DC",
+  white:   "#FFFFFF",
+  text:    "#111111",
+  muted:   "#6B7280",
 };
 
 function Login() {
@@ -20,18 +19,13 @@ function Login() {
   const [password, setPassword] = useState("");
   const [error, setError]       = useState("");
   const [loading, setLoading]   = useState(false);
-  const [focusedField, setFocusedField] = useState(null);
-
+  const [focused, setFocused]   = useState(null);
   const navigate = useNavigate();
 
   const handleLogin = (e) => {
     e.preventDefault();
-    if (!email || !password) {
-      setError("Please enter both email and password.");
-      return;
-    }
-    setLoading(true);
-    setError("");
+    if (!email || !password) { setError("Please enter both email and password."); return; }
+    setLoading(true); setError("");
     setTimeout(() => {
       if (email === "admin@gmail.com" && password === "1234") {
         localStorage.setItem("isLoggedIn", "true");
@@ -45,222 +39,244 @@ function Login() {
 
   const inputStyle = (field) => ({
     width: "100%",
-    padding: "11px 14px",
-    borderRadius: 9,
-    border: `1px solid ${focusedField === field ? T.red : T.grey200}`,
-    fontSize: 13.5,
+    padding: "12px 14px",
+    borderRadius: 10,
+    border: `1.5px solid ${focused === field ? T.red : T.grey200}`,
+    fontSize: 14,
     fontFamily: "'DM Sans', sans-serif",
     color: T.text,
-    background: focusedField === field ? T.white : T.grey100,
+    background: focused === field ? T.white : T.grey50,
     outline: "none",
-    transition: "border-color 0.15s, box-shadow 0.15s, background 0.15s",
-    boxShadow: focusedField === field ? "0 0 0 3px rgba(204,0,0,0.10)" : "none",
+    transition: "all 0.15s ease",
+    boxShadow: focused === field ? "0 0 0 3px rgba(204,0,0,0.09)" : "none",
     boxSizing: "border-box",
   });
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      background: T.black,
-      fontFamily: "'DM Sans', sans-serif",
-      position: "relative",
-      overflow: "hidden",
-    }}>
-      {/* Background radial accents — mirrors sidebar in App.js */}
-      <div style={{
-        position: "absolute", inset: 0, pointerEvents: "none",
-        background: `
-          radial-gradient(circle at 15% 85%, rgba(204,0,0,0.22) 0%, transparent 52%),
-          radial-gradient(circle at 85% 15%, rgba(204,0,0,0.14) 0%, transparent 50%),
-          radial-gradient(circle at 50% 50%, rgba(204,0,0,0.05) 0%, transparent 70%)
-        `,
-      }} />
+    <div style={{ minHeight: "100vh", display: "flex", fontFamily: "'DM Sans', sans-serif" }}>
+      <style>{`
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(16px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
 
-      {/* Subtle grid texture */}
+      {/* ── Left: Brand Panel ───────────────────────────── */}
       <div style={{
-        position: "absolute", inset: 0, pointerEvents: "none",
-        backgroundImage: `
-          linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)
-        `,
-        backgroundSize: "40px 40px",
-      }} />
-
-      {/* Card */}
-      <div style={{
-        position: "relative", zIndex: 1,
-        width: "100%", maxWidth: 400,
-        margin: "0 16px",
-        background: T.white,
-        borderRadius: 20,
-        padding: "40px 40px 36px",
-        boxShadow: "0 24px 64px rgba(0,0,0,0.40), 0 4px 16px rgba(0,0,0,0.20)",
-        animation: "cardIn 0.35s ease",
+        width: "44%",
+        minHeight: "100vh",
+        background: T.black,
+        display: "flex",
+        flexDirection: "column",
+        padding: "48px 52px",
+        position: "relative",
+        overflow: "hidden",
+        flexShrink: 0,
       }}>
-        <style>{`
-          @keyframes cardIn {
-            from { opacity: 0; transform: translateY(12px) scale(0.98); }
-            to   { opacity: 1; transform: translateY(0)   scale(1);    }
-          }
-          @keyframes spin {
-            to { transform: rotate(360deg); }
-          }
-        `}</style>
+        {/* Red glow accents */}
+        <div style={{
+          position: "absolute", inset: 0, pointerEvents: "none",
+          background: `
+            radial-gradient(circle at 10% 90%, rgba(204,0,0,0.28) 0%, transparent 55%),
+            radial-gradient(circle at 90% 10%, rgba(204,0,0,0.12) 0%, transparent 50%)
+          `,
+        }} />
+        {/* Subtle dot grid */}
+        <div style={{
+          position: "absolute", inset: 0, pointerEvents: "none",
+          backgroundImage: "radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px)",
+          backgroundSize: "28px 28px",
+        }} />
 
-        {/* Logo */}
-        <div style={{ 
-          display: "flex", 
-          justifyContent: "center", 
-          alignItems: "center", 
-          marginBottom: 14,
-          padding: "8px 0"
-        }}>
+        {/* Logo — top */}
+        <div style={{ position: "relative", zIndex: 1, marginBottom: 0 }}>
           <img
-            src={logo}
-            alt="Logo"
+            src={logoDark}
+            alt="Shaurrya Teleservices"
             style={{
-              height: 75,
+              height: 64,
               width: "auto",
               objectFit: "contain",
-              borderRadius: 10,
+              mixBlendMode: "screen",
             }}
           />
         </div>
 
-        {/* Heading */}
-        <div style={{ textAlign: "center", marginBottom: 20 }}>
-          <h2 style={{ fontSize: 22, fontWeight: 800, color: T.text, letterSpacing: -0.5, margin: 0 }}>
-            Welcome Back
-          </h2>
-          <p style={{ fontSize: 13.5, color: T.muted, marginTop: 5 }}>
-            Sign in to continue to Excel Validator
+        {/* Content — vertically centred */}
+        <div style={{
+          position: "relative", zIndex: 1,
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+        }}>
+          {/* Badge */}
+          <div style={{
+            display: "inline-block",
+            background: "rgba(204,0,0,0.18)",
+            border: "1px solid rgba(204,0,0,0.30)",
+            borderRadius: 99,
+            padding: "5px 14px",
+            marginBottom: 22,
+            alignSelf: "flex-start",
+          }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: T.red, letterSpacing: "0.8px", textTransform: "uppercase" }}>
+              Excel Validation Portal
+            </span>
+          </div>
+
+          {/* Headline */}
+          <h1 style={{
+            fontSize: 38,
+            fontWeight: 800,
+            color: T.white,
+            letterSpacing: "-1.2px",
+            lineHeight: 1.15,
+            margin: "0 0 18px",
+          }}>
+            Validate data.<br />
+            <span style={{ color: T.red }}>Ensure accuracy.</span>
+          </h1>
+
+          {/* Tagline */}
+          <p style={{
+            fontSize: 15,
+            color: "rgba(255,255,255,0.45)",
+            lineHeight: 1.7,
+            margin: 0,
+            maxWidth: 340,
+          }}>
+            Upload Excel files, define validation rules, and get instant quality reports across all form types.
           </p>
+
+          {/* Stats */}
+          <div style={{ display: "flex", gap: 32, marginTop: 40 }}>
+            {[
+              { label: "Forms Supported",   value: "7+"   },
+              { label: "Validation Rules",  value: "20+"  },
+              { label: "Accuracy Tracking", value: "Live" },
+            ].map((s) => (
+              <div key={s.label}>
+                <div style={{ fontSize: 25, fontWeight: 800, color: T.white, letterSpacing: "-0.5px" }}>
+                  {s.value}
+                </div>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.38)", marginTop: 3, fontWeight: 500 }}>
+                  {s.label}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* Divider */}
-        <div style={{ height: 1, background: T.grey200, marginBottom: 24 }} />
+        {/* Footer — bottom */}
+        <div style={{ position: "relative", zIndex: 1 }}>
+          <p style={{ fontSize: 12, color: "rgba(255,255,255,0.22)", margin: 0 }}>
+            © 2025 Excel Validator. All rights reserved.
+          </p>
+        </div>
+      </div>
 
-        {/* Error */}
-        {error && (
-          <div style={{
-            padding: "10px 14px",
-            borderRadius: 9,
-            background: T.redBg,
-            border: `1px solid rgba(204,0,0,0.18)`,
-            borderLeft: `3px solid ${T.red}`,
-            color: T.red,
-            fontSize: 13,
-            fontWeight: 500,
-            marginBottom: 18,
-          }}>
-            {error}
-          </div>
-        )}
+      {/* ── Right: Login Form ────────────────────────────── */}
+      <div style={{
+        flex: 1,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: T.white,
+        padding: "48px 32px",
+      }}>
+        <div style={{ width: "100%", maxWidth: 400, animation: "fadeUp 0.4s ease" }}>
 
-        {/* Form */}
-        <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-
-          {/* Email */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <label style={{ fontSize: 13, fontWeight: 600, color: T.text }}>
-              Email Address
-            </label>
-            <input
-              type="email"
-              placeholder="admin@gmail.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              onFocus={() => setFocusedField("email")}
-              onBlur={() => setFocusedField(null)}
-              style={inputStyle("email")}
-            />
+          {/* Heading */}
+          <div style={{ marginBottom: 32 }}>
+            <h2 style={{ fontSize: 26, fontWeight: 800, color: T.text, margin: "0 0 8px", letterSpacing: "-0.6px" }}>
+              Welcome back
+            </h2>
+            <p style={{ fontSize: 14, color: T.muted, margin: 0 }}>
+              Sign in to your account to continue
+            </p>
           </div>
 
-          {/* Password */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <label style={{ fontSize: 13, fontWeight: 600, color: T.text }}>
-              Password
-            </label>
-            <input
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              onFocus={() => setFocusedField("password")}
-              onBlur={() => setFocusedField(null)}
-              style={inputStyle("password")}
-            />
+          {/* Error */}
+          {error && (
+            <div style={{
+              padding: "11px 14px", borderRadius: 10,
+              background: "rgba(204,0,0,0.06)",
+              border: "1px solid rgba(204,0,0,0.18)",
+              borderLeft: `3px solid ${T.red}`,
+              color: T.red, fontSize: 13.5, fontWeight: 500, marginBottom: 20,
+            }}>
+              {error}
+            </div>
+          )}
+
+          {/* Form */}
+          <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+              <label style={{ fontSize: 13, fontWeight: 600, color: T.text }}>Email address</label>
+              <input
+                type="email" placeholder="admin@gmail.com" value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                onFocus={() => setFocused("email")} onBlur={() => setFocused(null)}
+                style={inputStyle("email")}
+              />
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+              <label style={{ fontSize: 13, fontWeight: 600, color: T.text }}>Password</label>
+              <input
+                type="password" placeholder="••••••••" value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onFocus={() => setFocused("password")} onBlur={() => setFocused(null)}
+                style={inputStyle("password")}
+              />
+            </div>
+
+            <button
+              type="submit" disabled={loading}
+              style={{
+                marginTop: 6, width: "100%", padding: "13px",
+                background: loading ? T.grey200 : T.red,
+                border: "none", borderRadius: 10,
+                color: loading ? T.muted : T.white,
+                fontSize: 14.5, fontWeight: 700,
+                fontFamily: "'DM Sans', sans-serif",
+                cursor: loading ? "not-allowed" : "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                transition: "all 0.15s ease", letterSpacing: "-0.1px",
+              }}
+              onMouseEnter={(e) => { if (!loading) { e.currentTarget.style.background = T.redDark; e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(204,0,0,0.30)"; } }}
+              onMouseLeave={(e) => { if (!loading) { e.currentTarget.style.background = T.red; e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "none"; } }}
+            >
+              {loading ? (
+                <>
+                  <div style={{ width: 15, height: 15, borderRadius: "50%", border: "2px solid rgba(0,0,0,0.12)", borderTop: `2px solid ${T.muted}`, animation: "spin 0.8s linear infinite" }} />
+                  Signing in…
+                </>
+              ) : "Sign In →"}
+            </button>
+          </form>
+
+          {/* Divider */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "28px 0 20px" }}>
+            <div style={{ flex: 1, height: 1, background: T.grey200 }} />
+            <span style={{ fontSize: 12, color: T.muted, whiteSpace: "nowrap" }}>default credentials</span>
+            <div style={{ flex: 1, height: 1, background: T.grey200 }} />
           </div>
 
-          {/* Submit */}
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              marginTop: 4,
-              width: "100%",
-              padding: "12px",
-              background: loading ? T.grey200 : T.red,
-              border: "none",
-              borderRadius: 9,
-              color: loading ? T.muted : T.white,
-              fontSize: 14,
-              fontWeight: 700,
-              fontFamily: "'DM Sans', sans-serif",
-              cursor: loading ? "not-allowed" : "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 8,
-              transition: "background 0.15s, transform 0.15s, box-shadow 0.15s",
-            }}
-            onMouseEnter={(e) => {
-              if (!loading) {
-                e.currentTarget.style.background  = T.redDark;
-                e.currentTarget.style.transform   = "translateY(-1px)";
-                e.currentTarget.style.boxShadow   = "0 6px 20px rgba(204,0,0,0.32)";
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!loading) {
-                e.currentTarget.style.background  = T.red;
-                e.currentTarget.style.transform   = "none";
-                e.currentTarget.style.boxShadow   = "none";
-              }
-            }}
-          >
-            {loading ? (
-              <>
-                <div style={{
-                  width: 14, height: 14, borderRadius: "50%",
-                  border: `2px solid rgba(0,0,0,0.15)`,
-                  borderTop: `2px solid ${T.muted}`,
-                  animation: "spin 0.8s linear infinite",
-                  flexShrink: 0,
-                }} />
-                Signing in…
-              </>
-            ) : "Sign In"}
-          </button>
-        </form>
-
-        {/* Footer hint */}
-        <p style={{
-          textAlign: "center",
-          fontSize: 11.5,
-          color: T.muted,
-          marginTop: 20,
-          padding: "10px 0 0",
-          borderTop: `1px solid ${T.grey200}`,
-        }}>
-          Default&nbsp;&nbsp;
-          <span style={{ fontFamily: "monospace", color: T.text, fontSize: 11 }}>admin@gmail.com</span>
-          &nbsp;/&nbsp;
-          <span style={{ fontFamily: "monospace", color: T.text, fontSize: 11 }}>1234</span>
-        </p>
+          {/* Credentials */}
+          <div style={{ display: "flex", gap: 10 }}>
+            <div style={{ flex: 1, padding: "10px 14px", borderRadius: 10, background: T.grey100, border: `1px solid ${T.grey200}` }}>
+              <div style={{ fontSize: 10.5, fontWeight: 600, color: T.muted, textTransform: "uppercase", letterSpacing: "0.6px", marginBottom: 4 }}>Email</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: T.text, fontFamily: "monospace" }}>admin@gmail.com</div>
+            </div>
+            <div style={{ flex: 1, padding: "10px 14px", borderRadius: 10, background: T.grey100, border: `1px solid ${T.grey200}` }}>
+              <div style={{ fontSize: 10.5, fontWeight: 600, color: T.muted, textTransform: "uppercase", letterSpacing: "0.6px", marginBottom: 4 }}>Password</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: T.text, fontFamily: "monospace" }}>1234</div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -1816,7 +1816,6 @@ const CreateForm = () => {
 
   // FIX 3 & 4: Active column for right-side focus
   const [activeCol, setActiveCol]         = useState(null);
-  const ruleCardRefs = useRef({});
 
   /* ── Pre-fill from redirect ── */
   useEffect(() => {
@@ -1854,15 +1853,21 @@ const CreateForm = () => {
     }
   }, [columns, activeCol]);
 
-  /* ── Scroll right panel to focused column ── */
+  const ruleCardRefs = useRef({});
+
+  /* ── Focus a column — scroll the page so the rule card is centred in the viewport ── */
   const focusColumn = (colName) => {
     setActiveCol(colName);
     setTimeout(() => {
-      const el = ruleCardRefs.current[colName];
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "nearest" });
-      }
-    }, 50);
+      const card = ruleCardRefs.current[colName];
+      if (!card) return;
+      const cardRect     = card.getBoundingClientRect();
+      const viewportH    = window.innerHeight;
+      /* target: card vertically centred in viewport */
+      const scrollTarget = window.scrollY + cardRect.top
+                           - (viewportH / 2 - cardRect.height / 2);
+      window.scrollTo({ top: Math.max(0, scrollTarget), behavior: "smooth" });
+    }, 40);
   };
 
   /* ── Reset ── */
@@ -2026,15 +2031,6 @@ const CreateForm = () => {
           message={popupMessage}
         />
       )}
-
-      <div>
-        <h2 style={{ fontSize: 22, fontWeight: 800, color: T.text, letterSpacing: -0.5, margin: 0 }}>
-          Create Form Template
-        </h2>
-        <p style={{ fontSize: 13.5, color: T.muted, marginTop: 4 }}>
-          Define a new form structure and save its validation rules
-        </p>
-      </div>
 
       {message.text && (
         <div style={{
@@ -2274,13 +2270,13 @@ const CreateForm = () => {
           </div>
         </div>
 
-        {/* ── RIGHT: Validation Rules ── */}
-        <div style={{
-          background: T.white, borderRadius: 14, border: `1px solid ${T.grey200}`,
-          padding: "22px 24px", boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-          position: "sticky", top: 24,
-          maxHeight: "calc(100vh - 80px)", overflowY: "auto",
-        }}>
+        {/* ── RIGHT: Validation Rules (all columns, full height) ── */}
+        <div
+          style={{
+            background: T.white, borderRadius: 14, border: `1px solid ${T.grey200}`,
+            padding: "22px 24px", boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+          }}
+        >
           <SectionHeader
             icon={FileSpreadsheet}
             title="Validation Rules"
@@ -2398,7 +2394,7 @@ const CreateForm = () => {
                     {/* Rule body */}
                     <div style={{ padding: "12px 14px", display: "flex", flexDirection: "column", gap: 10 }}>
 
-                      {/* FIX 5: AI Suggestion */}
+                      {/* AI Suggestion */}
                       <AISuggestionBadge
                         columnName={col}
                         currentType={typeVal}
@@ -2463,10 +2459,8 @@ const CreateForm = () => {
                         </div>
                       )}
 
-                      {/* FIX 6: Date flexibility note */}
                       {isDate && <DateFlexibilityNote />}
 
-                      {/* TEXT type → AI Intelligence panel */}
                       {isText && (
                         <TextIntelligenceConfig
                           col={col}
@@ -2475,7 +2469,6 @@ const CreateForm = () => {
                         />
                       )}
 
-                      {/* All other types → generic subfields */}
                       {!isText && (
                         <SubFields
                           typeDef={typeDef}
@@ -2523,7 +2516,7 @@ const CreateForm = () => {
       </div>
 
       <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes spin  { to { transform: rotate(360deg); } }
         @keyframes popIn { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }
       `}</style>
     </div>

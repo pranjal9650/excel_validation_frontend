@@ -213,16 +213,6 @@ const SiteMonitoring = () => {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24, fontFamily: "'DM Sans', sans-serif" }}>
 
-      {/* Page header */}
-      <div>
-        <h2 style={{ fontSize: 22, fontWeight: 800, color: T.text, letterSpacing: -0.5, margin: 0 }}>
-          Site Monitoring
-        </h2>
-        <p style={{ fontSize: 13.5, color: T.muted, marginTop: 4 }}>
-          Track and monitor site status and connectivity in real-time
-        </p>
-      </div>
-
       {/* ── KPI cards ── */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
         <StatCard

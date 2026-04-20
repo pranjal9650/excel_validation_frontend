@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { ClipboardList, FileX, RefreshCw, TrendingUp } from "lucide-react";
+import { ClipboardList, FileX } from "lucide-react";
 
 const BASE_URL = "http://127.0.0.1:8000";
 
@@ -123,32 +123,6 @@ function SummaryCard({ label, value, accent }) {
   );
 }
 
-/* ─── Refresh button ─────────────────────────────────────────── */
-function RefreshButton({ refreshing, onClick }) {
-  const [hovered, setHovered] = useState(false);
-  return (
-    <button
-      onClick={onClick} disabled={refreshing}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        display: "flex", alignItems: "center", gap: 7,
-        padding: "9px 16px", borderRadius: 9,
-        border: `1px solid ${hovered ? T.red : T.grey200}`,
-        background: hovered ? T.redBg : T.white,
-        color: hovered ? T.red : T.muted,
-        fontSize: 13, fontWeight: 600,
-        fontFamily: "'DM Sans', sans-serif",
-        cursor: refreshing ? "not-allowed" : "pointer",
-        transition: "all 0.15s ease",
-      }}
-    >
-      <RefreshCw size={14} style={{ animation: refreshing ? "spin 0.9s linear infinite" : "none" }} />
-      Refresh
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-    </button>
-  );
-}
 
 /* ─── Empty state ────────────────────────────────────────────── */
 function EmptyState() {
@@ -165,24 +139,33 @@ function EmptyState() {
 
 /* ─── Main component ─────────────────────────────────────────── */
 function History() {
-  const [history, setHistory]     = useState([]);
-  const [loading, setLoading]     = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const [history, setHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const fetchHistory = async (isRefresh = false) => {
-    if (isRefresh) setRefreshing(true);
+  const fetchHistory = async () => {
     try {
-      const res = await axios.get(`${BASE_URL}/UPLOAD-HISTORY`);
+      const res = await axios.get(`${BASE_URL}/UPLOAD-HISTORY`, { params: { _t: Date.now() } });
       setHistory(res.data);
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   };
 
-  useEffect(() => { fetchHistory(); }, []);
+  useEffect(() => {
+    fetchHistory();
+    localStorage.removeItem("rulesUpdatedAt");
+  }, []);
+
+  useEffect(() => {
+    const handler = () => {
+      fetchHistory();
+      localStorage.removeItem("rulesUpdatedAt");
+    };
+    window.addEventListener("rulesUpdated", handler);
+    return () => window.removeEventListener("rulesUpdated", handler);
+  }, []);
 
   /* ── Compute overall accuracy ── */
   const totalValid = history.reduce((s, r) => s + Number(r.valid_rows || 0), 0);
@@ -201,15 +184,6 @@ function History() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 22, fontFamily: "'DM Sans', sans-serif" }}>
-
-      {/* ── Page header ── */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
-        <div>
-          <h2 style={{ fontSize: 22, fontWeight: 800, color: T.black, letterSpacing: -0.5, margin: 0 }}>Upload History</h2>
-          <p style={{ fontSize: 13.5, color: T.muted, marginTop: 4 }}>All previously uploaded Excel files and their validation results</p>
-        </div>
-        <RefreshButton refreshing={refreshing} onClick={() => fetchHistory(true)} />
-      </div>
 
       {/* ── Stats strip ── */}
       {history.length > 0 && (

@@ -111,19 +111,31 @@ function Login() {
           flexDirection: "column",
           justifyContent: "center",
         }}>
-          {/* Badge */}
-          <div style={{
-            display: "inline-block",
-            background: "rgba(204,0,0,0.18)",
-            border: "1px solid rgba(204,0,0,0.30)",
-            borderRadius: 99,
-            padding: "5px 14px",
-            marginBottom: 22,
-            alignSelf: "flex-start",
-          }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: T.red, letterSpacing: "0.8px", textTransform: "uppercase" }}>
-              Excel Validation Portal
+          {/* Portal name */}
+          <div style={{ marginBottom: 20 }}>
+            <span style={{
+              fontSize: 42,
+              fontWeight: 900,
+              letterSpacing: "-1.5px",
+              display: "inline-block",
+              filter: "drop-shadow(0 0 18px rgba(204,0,0,0.55))",
+            }}>
+              <span style={{
+                color: T.white,
+                textShadow: "0 2px 16px rgba(255,255,255,0.15)",
+              }}>Sahi</span>
+              <span style={{
+                color: T.red,
+                textShadow: "0 0 24px rgba(204,0,0,0.8)",
+              }}>Data</span>
             </span>
+            <div style={{
+              height: 3,
+              width: 56,
+              background: `linear-gradient(90deg, ${T.red}, transparent)`,
+              borderRadius: 99,
+              marginTop: 6,
+            }} />
           </div>
 
           {/* Headline */}
@@ -172,7 +184,7 @@ function Login() {
         {/* Footer — bottom */}
         <div style={{ position: "relative", zIndex: 1 }}>
           <p style={{ fontSize: 12, color: "rgba(255,255,255,0.22)", margin: 0 }}>
-            © 2025 Excel Validator. All rights reserved.
+            © 2025 SahiData. All rights reserved.
           </p>
         </div>
       </div>

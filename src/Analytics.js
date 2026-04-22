@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
+import SiteAnalytics from "./SiteAnalytics";
 
 const BASE_URL = "http://127.0.0.1:8000";
 
@@ -59,6 +60,7 @@ function MiniAccuracy({ valid, total }) {
 }
 
 function Analytics() {
+  const [analyticsView, setAnalyticsView]             = useState("forms");
   const [gridData, setGridData]                       = useState([]);
   const [allFormNames, setAllFormNames]               = useState([]);
   const [formRules, setFormRules]                     = useState({});
@@ -154,6 +156,62 @@ function Analytics() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24, fontFamily: "'DM Sans', sans-serif" }}>
+
+      {/* ── Top Toggle: Form Analytics | Site Analytics ── */}
+      <div style={{
+        display: "flex", background: T.grey100,
+        borderRadius: 11, padding: 4,
+        border: `1px solid ${T.grey200}`, gap: 2,
+        width: "fit-content",
+      }}>
+        {[
+          {
+            key: "forms",
+            label: "Form Analytics",
+            icon: (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>
+              </svg>
+            ),
+          },
+          {
+            key: "sites",
+            label: "Site Analytics",
+            icon: (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+              </svg>
+            ),
+          },
+        ].map(({ key, label, icon }) => {
+          const isActive = analyticsView === key;
+          return (
+            <button
+              key={key}
+              onClick={() => setAnalyticsView(key)}
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 7,
+                padding: "8px 20px", borderRadius: 8, border: "none",
+                background: isActive ? T.white : "transparent",
+                color: isActive ? (key === "sites" ? T.red : T.text) : T.muted,
+                fontWeight: isActive ? 700 : 500,
+                fontSize: 13.5, fontFamily: "'DM Sans', sans-serif",
+                boxShadow: isActive ? "0 1px 4px rgba(0,0,0,0.10)" : "none",
+                cursor: "pointer", transition: "all 0.15s ease",
+              }}
+            >
+              {icon}
+              {label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ── Site Analytics ── */}
+      {analyticsView === "sites" && <SiteAnalytics />}
+
+      {/* ── Form Analytics ── */}
+      {analyticsView === "forms" && (<>
 
       {/* ── Filters ── */}
       <div style={{
@@ -629,6 +687,8 @@ function Analytics() {
           </div>
         )
       )}
+
+      </>)}
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>

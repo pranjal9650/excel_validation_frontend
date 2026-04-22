@@ -1549,7 +1549,7 @@ function SectionHeader({ icon: Icon, title, subtitle, accent = T.red, bg = T.red
   return (
     <div style={{
       display: "flex", alignItems: "center", gap: 10,
-      paddingBottom: 16, borderBottom: `1px solid ${T.grey200}`, marginBottom: 18,
+      paddingBottom: 14, borderBottom: `1px solid ${T.grey200}`, marginBottom: 18,
     }}>
       <div style={{
         width: 34, height: 34, borderRadius: 9,
@@ -2021,7 +2021,7 @@ const CreateForm = () => {
 
   /* ─────────────────── RENDER ─────────────────────────────── */
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 24, fontFamily: "'DM Sans', sans-serif" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 20, flex: 1, minHeight: 0, fontFamily: "'DM Sans', sans-serif" }}>
 
       {showPopup && (
         <SuccessPopup
@@ -2049,10 +2049,10 @@ const CreateForm = () => {
       )}
 
       {/* ── Two-column layout ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, flex: 1, minHeight: 0 }}>
 
         {/* ── LEFT: Form Name + Columns ── */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
           {/* Form Name */}
           <div style={{ background: T.white, borderRadius: 14, border: `1px solid ${T.grey200}`, padding: "22px 24px", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
@@ -2074,7 +2074,7 @@ const CreateForm = () => {
           </div>
 
           {/* Columns */}
-          <div style={{ background: T.white, borderRadius: 14, border: `1px solid ${T.grey200}`, padding: "22px 24px", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+          <div style={{ background: T.white, borderRadius: 14, border: `1px solid ${T.grey200}`, padding: "22px 24px", boxShadow: "0 1px 4px rgba(0,0,0,0.06)", flex: 1, display: "flex", flexDirection: "column" }}>
             <SectionHeader icon={FileSpreadsheet} title="Column Names" subtitle="Click a column to configure its rules on the right" />
 
             {/* FIX 4: Column completion status summary */}
@@ -2255,7 +2255,7 @@ const CreateForm = () => {
             <button
               onClick={addColumn}
               style={{
-                marginTop: 14, width: "100%", padding: "9px 14px",
+                marginTop: 12, width: "100%", padding: "9px 14px",
                 borderRadius: 9, border: `1.5px dashed ${T.grey200}`,
                 background: "transparent", color: T.muted,
                 fontSize: 13, fontWeight: 600, fontFamily: "'DM Sans', sans-serif",
@@ -2491,7 +2491,7 @@ const CreateForm = () => {
           onClick={handleSaveRules}
           disabled={loading}
           style={{
-            flex: 1, padding: "13px 20px",
+            flex: 1, padding: "14px 20px",
             background: loading ? T.grey200 : T.red,
             border: "none", borderRadius: 10,
             color: loading ? T.muted : T.white,

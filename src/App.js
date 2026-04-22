@@ -85,15 +85,129 @@ function resolveTheme(pref) {
 
 /* ─── Nav items ──────────────────────────────────────────────── */
 const NAV_ITEMS = [
-  { label: "Dashboard",  icon: LayoutDashboard, path: "/dashboard" },
-  { label: "Upload",     icon: Upload,           path: "/upload" },
-  { label: "History",    icon: ClipboardList,    path: "/history" },
-  { label: "Form Data",  icon: FileSpreadsheet,  path: "/form-data" },
-  { label: "Analytics",  icon: BarChart2,        path: "/analytics" },
+  { label: "Dashboard",       icon: LayoutDashboard, path: "/dashboard" },
+  { label: "Upload",          icon: Upload,           path: "/upload" },
+  { label: "History",         icon: ClipboardList,    path: "/history" },
+  { label: "Form Data",       icon: FileSpreadsheet,  path: "/form-data" },
+  { label: "Analytics",       icon: BarChart2,        path: "/analytics" },
   { label: "Site Monitoring", icon: MapPin,           path: "/site-monitoring" },
-  { label: "Create Form",     icon: FileSpreadsheet,  path: "/create-form" },
-  { label: "Rules",           icon: BookOpen,         path: "/rules" },
+  { label: "Rules Validation", icon: FileSpreadsheet, path: "/create-form" },
 ];
+
+/* ─── Combined Rules Validation + System Settings page ──────── */
+const TABS = [
+  {
+    key: "rules-validation",
+    label: "Rules Validation",
+    icon: FileSpreadsheet,
+    subtitle: "Create and configure form validation templates",
+    accent: T.red,
+    accentBg: "rgba(204,0,0,0.07)",
+    accentBorder: "rgba(204,0,0,0.16)",
+  },
+  {
+    key: "system-settings",
+    label: "System Settings",
+    icon: BookOpen,
+    subtitle: "Manage the validation rule book across all forms",
+    accent: "#2563EB",
+    accentBg: "rgba(37,99,235,0.07)",
+    accentBorder: "rgba(37,99,235,0.16)",
+  },
+];
+
+function RulesValidationPage() {
+  const [activeTab, setActiveTab] = useState("rules-validation");
+  const tab = TABS.find((t) => t.key === activeTab);
+  const TabIcon = tab.icon;
+
+  return (
+    <div style={{ fontFamily: "'DM Sans', sans-serif", flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+      <div style={{
+        flex: 1,
+        minHeight: 0,
+        display: "flex",
+        flexDirection: "column",
+        background: T.white,
+        borderRadius: 16,
+        border: `1px solid ${T.border}`,
+        overflow: "hidden",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+      }}>
+
+        {/* ── Header: icon + title + tab switcher ── */}
+        <div style={{
+          padding: "12px 20px 0",
+          background: "#FAFAF8",
+          borderBottom: `1px solid ${T.border}`,
+        }}>
+          {/* Top row: icon + active tab title */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
+            <div style={{
+              width: 30, height: 30, borderRadius: 8,
+              background: tab.accentBg,
+              border: `1px solid ${tab.accentBorder}`,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              flexShrink: 0,
+              transition: "background 0.18s, border-color 0.18s",
+            }}>
+              <TabIcon size={15} color={tab.accent} />
+            </div>
+            <div>
+              <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: T.black, letterSpacing: "-0.3px", transition: "color 0.15s" }}>
+                {tab.label}
+              </p>
+              <p style={{ margin: 0, fontSize: 11.5, color: T.grey500, marginTop: 1 }}>
+                {tab.subtitle}
+              </p>
+            </div>
+          </div>
+
+          {/* Tab strip */}
+          <div style={{ display: "flex", gap: 0 }}>
+            {TABS.map((t) => {
+              const Icon = t.icon;
+              const isActive = t.key === activeTab;
+              return (
+                <button
+                  key={t.key}
+                  onClick={() => setActiveTab(t.key)}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 7,
+                    padding: "8px 16px",
+                    border: "none",
+                    borderBottom: isActive ? `2px solid ${t.accent}` : "2px solid transparent",
+                    background: "transparent",
+                    color: isActive ? t.accent : T.grey500,
+                    fontSize: 13.5,
+                    fontWeight: isActive ? 700 : 500,
+                    fontFamily: "'DM Sans', sans-serif",
+                    cursor: "pointer",
+                    transition: "color 0.15s, border-color 0.15s",
+                    marginBottom: -1,
+                    whiteSpace: "nowrap",
+                  }}
+                  onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.color = T.black; }}
+                  onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.color = T.grey500; }}
+                >
+                  <Icon size={14} style={{ flexShrink: 0 }} />
+                  {t.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ── Tab content ── */}
+        <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px" }}>
+          {activeTab === "rules-validation" && <CreateForm />}
+          {activeTab === "system-settings"  && <Rules />}
+        </div>
+
+      </div>
+    </div>
+  );
+}
 
 /* ─── Top nav link ───────────────────────────────────────────── */
 function TopNavLink({ item, th }) {
@@ -261,7 +375,8 @@ const Layout = () => {
     <div style={{
       display: "flex",
       flexDirection: "column",
-      minHeight: "100vh",
+      height: "100vh",
+      overflow: "hidden",
       fontFamily: "'DM Sans', sans-serif",
       background: th.bg,
       transition: "background 0.2s ease",
@@ -409,31 +524,38 @@ const Layout = () => {
       {/* ── Page content ─────────────────────────────────────── */}
       <main style={{
         flex: 1,
-        overflowY: "auto",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
         background: th.bg,
         transition: "background 0.2s ease",
       }}>
         <div style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          overflowY: "auto",
           maxWidth: 1300,
           margin: "0 auto",
-          padding: "32px 24px",
+          padding: "20px 24px",
           width: "100%",
+          boxSizing: "border-box",
         }}>
           <Routes>
             <Route path="/dashboard"       element={<Dashboard />} />
             <Route path="/upload"          element={<UploadPage />} />
-            <Route path="/create-form"     element={<CreateForm />} />
+            <Route path="/create-form"     element={<RulesValidationPage />} />
             <Route path="/history"         element={<History />} />
             <Route path="/form-data"       element={<FormData />} />
             <Route path="/analytics"       element={<Analytics />} />
             <Route path="/site-monitoring" element={<SiteMonitoring />} />
-            <Route path="/rules"           element={<Rules />} />
             <Route path="*"               element={<Navigate to="/dashboard" />} />
           </Routes>
         </div>
       </main>
 
       <style>{`
+        html, body { height: 100%; overflow: hidden; margin: 0; padding: 0; }
         nav::-webkit-scrollbar { display: none; }
         @keyframes fadeInDown {
           from { opacity: 0; transform: translateY(-6px); }

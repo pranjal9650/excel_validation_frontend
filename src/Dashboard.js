@@ -7,8 +7,9 @@ import {
 import {
   FileSpreadsheet, Rows3, CheckCircle2, XCircle, TrendingUp,
   TrendingDown, User, ChevronDown, ChevronUp,
-  AlertTriangle, X,
+  AlertTriangle, X, MapPin,
 } from "lucide-react";
+import SiteDashboard from "./SiteDashboard";
 
 const BASE_URL = "http://127.0.0.1:8000";
 
@@ -284,6 +285,7 @@ function UserRow({ user, index, allFormNames }) {
 
 /* ─── Main component ─────────────────────────────────────────── */
 const Dashboard = () => {
+  const [dashView, setDashView]   = useState("forms");
   const [stats, setStats]         = useState(null);
   const [chartData, setChartData] = useState([]);
   const [tableData, setTableData] = useState([]);
@@ -403,26 +405,6 @@ const Dashboard = () => {
     setAllFormNames([...formNamesSet]);
   };
 
-  /* ── Loader ── */
-  if (loading) {
-    return (
-      <div style={{
-        display: "flex", flexDirection: "column",
-        alignItems: "center", justifyContent: "center",
-        height: "60vh", gap: 16,
-      }}>
-        <div style={{
-          width: 44, height: 44, borderRadius: "50%",
-          border: `3px solid ${T.border}`,
-          borderTop: `3px solid ${T.red}`,
-          animation: "spin 0.9s linear infinite",
-        }} />
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-        <p style={{ color: T.muted, fontSize: 14, fontWeight: 500 }}>Loading dashboard…</p>
-      </div>
-    );
-  }
-
   const {
     total_forms = 0,
     total_rows  = 0,
@@ -437,6 +419,55 @@ const Dashboard = () => {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20, fontFamily: "'DM Sans', sans-serif" }}>
+
+      {/* ── Dashboard Toggle ── */}
+      <div style={{
+        display: "flex", background: T.surface,
+        borderRadius: 11, padding: 4,
+        border: `1px solid ${T.border}`, gap: 2,
+        width: "fit-content",
+      }}>
+        {[
+          { key: "forms", label: "Forms Dashboard", icon: FileSpreadsheet },
+          { key: "sites", label: "Site Dashboard",  icon: MapPin },
+        ].map(({ key, label, icon: Icon }) => {
+          const isActive = dashView === key;
+          return (
+            <button
+              key={key}
+              onClick={() => setDashView(key)}
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 7,
+                padding: "8px 20px", borderRadius: 8,
+                border: "none",
+                background: isActive ? T.white : "transparent",
+                color: isActive ? (key === "sites" ? T.red : T.text) : T.muted,
+                fontWeight: isActive ? 700 : 500,
+                fontSize: 13.5, fontFamily: "'DM Sans', sans-serif",
+                boxShadow: isActive ? "0 1px 4px rgba(0,0,0,0.10)" : "none",
+                cursor: "pointer", transition: "all 0.15s ease",
+              }}
+            >
+              <Icon size={14} />
+              {label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ── Site Dashboard ── */}
+      {dashView === "sites" && <SiteDashboard />}
+
+      {/* ── Forms Dashboard: loading ── */}
+      {dashView === "forms" && loading && (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "60vh", gap: 16 }}>
+          <div style={{ width: 44, height: 44, borderRadius: "50%", border: `3px solid ${T.border}`, borderTop: `3px solid ${T.red}`, animation: "spin 0.9s linear infinite" }} />
+          <p style={{ color: T.muted, fontSize: 14, fontWeight: 500 }}>Loading dashboard…</p>
+        </div>
+      )}
+
+      {/* ── Forms Dashboard ── */}
+      {dashView === "forms" && !loading && (<>
 
       {/* ── Topbar: title + refresh ── */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -1345,6 +1376,8 @@ const Dashboard = () => {
           </div>
         </div>
       )}
+
+      </>)}
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>

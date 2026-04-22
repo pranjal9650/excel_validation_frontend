@@ -59,24 +59,13 @@
   }
 }
 
-/* Custom scrollbar */
+/* Custom scrollbar — hidden */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  display: none;
 }
 
-::-webkit-scrollbar-track {
-  background: #fdf2f2;
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #dc2626;
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #b91c1c;
+* {
+  scrollbar-width: none;
 }
 
 /* Animation utilities */

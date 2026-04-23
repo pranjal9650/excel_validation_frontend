@@ -353,7 +353,7 @@ function SiteAnalytics() {
                   Alarm events per site per alarm type — {siteRows.length} site(s) · {allAlarmTypes.length} alarm type(s)
                 </p>
                 <div style={{ display: "flex", gap: 12, fontSize: 11.5, color: T.muted, marginTop: 6, flexWrap: "wrap" }}>
-                  <span>Counts = alarm events over the <span style={{ fontWeight: 700 }}>last 10 days</span></span>
+                  <span>Counts = alarm events over the <span style={{ fontWeight: 700 }}>last 1 month</span></span>
                   <span>·</span>
                   <span><span style={{ color: T.red, fontWeight: 700 }}>Red</span> ≥ 20 &nbsp;<span style={{ color: T.orange, fontWeight: 700 }}>Orange</span> ≥ 10</span>
                   <span>·</span>

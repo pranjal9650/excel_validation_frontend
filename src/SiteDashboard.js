@@ -318,7 +318,7 @@ const SiteDashboard = () => {
           <h2 style={{ fontSize: 20, fontWeight: 800, color: T.text, margin: 0, letterSpacing: "-0.4px" }}>Site Dashboard</h2>
           {lastUpdated && (
             <p style={{ fontSize: 12, color: T.muted, margin: "3px 0 0" }}>
-              Last updated: {lastUpdated.toLocaleTimeString()} · 10-day alarm analysis
+              Last updated: {lastUpdated.toLocaleTimeString()} · 1-month alarm analysis
             </p>
           )}
         </div>
@@ -372,7 +372,7 @@ const SiteDashboard = () => {
           icon={AlertTriangle}
           accent={T.red}
           bg={T.redBg}
-          sub="Last 10 days"
+          sub="Last 1 month"
         />
         <SiteStatCard
           label="Sites with Alarms"
@@ -405,8 +405,8 @@ const SiteDashboard = () => {
 
         {/* 10-Day Alarm Trend */}
         <SectionCard
-          title="10-Day Alarm Trend"
-          subtitle="Daily alarm event count over the past 10 days"
+          title="30-Day Alarm Trend"
+          subtitle="Daily alarm event count over the past 1 month"
           icon={Activity}
           accent={T.red}
           accentBg={T.redBg}
@@ -631,7 +631,7 @@ const SiteDashboard = () => {
       {/* ── Alarm Events Table ── */}
       <SectionCard
         title="Alarm Events"
-        subtitle="10-day alarm report — site outage events"
+        subtitle="1-month alarm report — site outage events"
         icon={AlertTriangle}
         accent={T.red}
         accentBg={T.redBg}

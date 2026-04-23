@@ -18,6 +18,7 @@ import Analytics from "./Analytics";
 import SiteMonitoring from "./SiteMonitoring";
 import CreateForm from "./CreateForm";
 import Rules from "./Rules";
+import EmailReports from "./EmailReports";
 
 /* Logo */
 import logo from "./assets/logo.png";
@@ -37,6 +38,7 @@ import {
   Sun,
   Monitor,
   Check,
+  Mail,
 } from "lucide-react";
 
 /* ─── Design tokens ──────────────────────────────────────────── */
@@ -91,6 +93,7 @@ const NAV_ITEMS = [
   { label: "Form Data",       icon: FileSpreadsheet,  path: "/form-data" },
   { label: "Analytics",       icon: BarChart2,        path: "/analytics" },
   { label: "Site Monitoring", icon: MapPin,           path: "/site-monitoring" },
+  { label: "Email",           icon: Mail,             path: "/email-reports" },
   { label: "Rules Validation", icon: FileSpreadsheet, path: "/create-form" },
 ];
 
@@ -549,6 +552,7 @@ const Layout = () => {
             <Route path="/form-data"       element={<FormData />} />
             <Route path="/analytics"       element={<Analytics />} />
             <Route path="/site-monitoring" element={<SiteMonitoring />} />
+            <Route path="/email-reports"  element={<EmailReports />} />
             <Route path="*"               element={<Navigate to="/dashboard" />} />
           </Routes>
         </div>

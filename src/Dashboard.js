@@ -632,19 +632,14 @@ const Dashboard = () => {
                         boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
                       }}>
 
-                        {/* User header row */}
-                        <div
-                          onClick={() => setExpandedUser(isExpanded ? null : userRecord.username)}
-                          style={{
-                            padding: "14px 18px",
-                            background: isExpanded ? "rgba(204,0,0,0.05)" : T.pageBg,
-                            borderBottom: isExpanded ? "1px solid rgba(204,0,0,0.12)" : "none",
-                            display: "flex", alignItems: "center",
-                            justifyContent: "space-between",
-                            cursor: "pointer",
-                            transition: "all 0.14s ease",
-                          }}
-                        >
+                        {/* User header */}
+                        <div style={{
+                          padding: "14px 18px",
+                          background: "rgba(204,0,0,0.04)",
+                          borderBottom: "1px solid rgba(204,0,0,0.10)",
+                          display: "flex", alignItems: "center",
+                          justifyContent: "space-between",
+                        }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                             <div style={{
                               width: 36, height: 36, borderRadius: "50%",
@@ -665,128 +660,166 @@ const Dashboard = () => {
                               </p>
                             </div>
                           </div>
-                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                            {userRecord.field_summary?.[0] && (
-                              <span style={{
-                                fontSize: 11.5, fontWeight: 600,
-                                background: "rgba(204,0,0,0.07)", color: T.red,
-                                padding: "3px 10px", borderRadius: 99,
-                                border: "1px solid rgba(204,0,0,0.15)",
-                              }}>
-                                Most failed: {userRecord.field_summary[0].field}
-                              </span>
-                            )}
-                            {isExpanded
-                              ? <ChevronUp size={16} color={T.red} />
-                              : <ChevronDown size={16} color={T.muted} />
-                            }
-                          </div>
                         </div>
 
-                        {/* Expanded detail */}
-                        {isExpanded && (
-                          <div style={{ padding: "14px 18px", display: "flex", flexDirection: "column", gap: 10 }}>
+                        {/* Field-wise breakdown — always visible */}
+                        <div style={{ padding: "14px 18px", display: "flex", flexDirection: "column", gap: 10 }}>
 
-                            <p style={{
-                              fontSize: 11, fontWeight: 700, color: T.muted,
-                              textTransform: "uppercase", letterSpacing: "0.6px", margin: 0,
-                            }}>
-                              Field-wise Failure Breakdown
-                            </p>
+                          <p style={{
+                            fontSize: 11, fontWeight: 700, color: T.muted,
+                            textTransform: "uppercase", letterSpacing: "0.6px", margin: 0,
+                          }}>
+                            Field-wise Failure Breakdown
+                          </p>
 
-                            <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-                              {(userRecord.field_summary || []).map((fs, j) => (
-                                <div key={j} style={{
-                                  display: "flex", alignItems: "flex-start",
-                                  gap: 12, padding: "10px 14px", borderRadius: 9,
-                                  background: T.pageBg, border: `1px solid ${T.border}`,
+                          <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+                            {(userRecord.field_summary || []).map((fs, j) => (
+                              <div key={j} style={{
+                                display: "flex", alignItems: "flex-start",
+                                gap: 12, padding: "10px 14px", borderRadius: 9,
+                                background: T.pageBg, border: `1px solid ${T.border}`,
+                              }}>
+                                <XCircle size={14} color={T.red} style={{ marginTop: 2, flexShrink: 0 }} />
+                                <div style={{ flex: 1 }}>
+                                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                                    <span style={{ fontSize: 13, fontWeight: 700, color: T.text }}>
+                                      {fs.field}
+                                    </span>
+                                    <span style={{
+                                      fontSize: 11.5, fontWeight: 700,
+                                      background: T.redBg, color: T.red,
+                                      padding: "1px 8px", borderRadius: 99,
+                                      border: "1px solid rgba(204,0,0,0.15)",
+                                    }}>
+                                      {fs.fail_count} failure{fs.fail_count !== 1 ? "s" : ""}
+                                    </span>
+                                  </div>
+                                  {fs.sample_values?.length > 0 && (
+                                    <p style={{ fontSize: 12, color: T.muted, margin: "4px 0 0" }}>
+                                      Sample bad values:&nbsp;
+                                      {fs.sample_values.map((v, k) => (
+                                        <span key={k} style={{
+                                          background: T.white,
+                                          border: `1px solid ${T.border}`,
+                                          borderRadius: 5, padding: "1px 7px",
+                                          fontSize: 11.5, fontWeight: 600,
+                                          color: T.text, marginRight: 4,
+                                        }}>
+                                          "{v}"
+                                        </span>
+                                      ))}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Sample rows — behind a toggle (structured errors) */}
+                          {userRecord.sample_errors?.length > 0 && (
+                            <>
+                              <button
+                                onClick={() => setExpandedUser(isExpanded ? null : userRecord.username)}
+                                style={{
+                                  display: "inline-flex", alignItems: "center", gap: 6,
+                                  background: "none", border: `1px solid ${T.border}`,
+                                  borderRadius: 7, padding: "5px 12px",
+                                  fontSize: 12, fontWeight: 600, color: T.muted,
+                                  cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+                                  width: "fit-content", marginTop: 2,
+                                }}
+                              >
+                                {isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                                {isExpanded ? "Hide" : "Show"} sample invalid rows
+                              </button>
+                              {isExpanded && userRecord.sample_errors.map((rec, k) => (
+                                <div key={k} style={{
+                                  borderRadius: 8, overflow: "hidden",
+                                  border: "1px solid rgba(204,0,0,0.15)",
+                                  borderLeft: `3px solid ${T.red}`,
                                 }}>
-                                  <XCircle size={14} color={T.red} style={{ marginTop: 2, flexShrink: 0 }} />
-                                  <div style={{ flex: 1 }}>
-                                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                                      <span style={{ fontSize: 13, fontWeight: 700, color: T.text }}>
-                                        {fs.field}
-                                      </span>
-                                      <span style={{
-                                        fontSize: 11.5, fontWeight: 700,
-                                        background: T.redBg, color: T.red,
-                                        padding: "1px 8px", borderRadius: 99,
-                                        border: "1px solid rgba(204,0,0,0.15)",
+                                  <div style={{
+                                    padding: "7px 12px",
+                                    background: "rgba(204,0,0,0.06)",
+                                    fontSize: 12, fontWeight: 700, color: T.red,
+                                  }}>
+                                    Row {rec.row_number}
+                                  </div>
+                                  <div style={{ padding: "8px 12px", display: "flex", flexDirection: "column", gap: 5 }}>
+                                    {rec.errors.map((err, m) => (
+                                      <div key={m} style={{
+                                        display: "flex", alignItems: "flex-start", gap: 8,
+                                        fontSize: 12.5, color: T.text,
                                       }}>
-                                        {fs.fail_count} failure{fs.fail_count !== 1 ? "s" : ""}
-                                      </span>
-                                    </div>
-                                    {fs.sample_values?.length > 0 && (
-                                      <p style={{ fontSize: 12, color: T.muted, margin: "4px 0 0" }}>
-                                        Sample bad values:&nbsp;
-                                        {fs.sample_values.map((v, k) => (
-                                          <span key={k} style={{
-                                            background: T.white,
-                                            border: `1px solid ${T.border}`,
-                                            borderRadius: 5, padding: "1px 7px",
-                                            fontSize: 11.5, fontWeight: 600,
-                                            color: T.text, marginRight: 4,
-                                          }}>
-                                            "{v}"
-                                          </span>
-                                        ))}
-                                      </p>
-                                    )}
+                                        <span style={{ fontWeight: 700, minWidth: 120, color: T.muted }}>
+                                          {err.field}:
+                                        </span>
+                                        <span style={{
+                                          background: T.redBg, color: T.red,
+                                          padding: "0px 6px", borderRadius: 5,
+                                          fontWeight: 600, fontSize: 12,
+                                        }}>
+                                          "{err.value}"
+                                        </span>
+                                        <span style={{ color: T.muted, fontSize: 12 }}>
+                                          — {err.reason}
+                                        </span>
+                                      </div>
+                                    ))}
                                   </div>
                                 </div>
                               ))}
-                            </div>
+                            </>
+                          )}
 
-                            {userRecord.sample_errors?.length > 0 && (
-                              <>
-                                <p style={{
-                                  fontSize: 11, fontWeight: 700, color: T.muted,
-                                  textTransform: "uppercase", letterSpacing: "0.6px",
-                                  margin: "6px 0 0",
+                          {/* Raw sample rows fallback — when specific errors aren't available */}
+                          {!userRecord.sample_errors?.length && userRecord.raw_samples?.length > 0 && (
+                            <>
+                              <button
+                                onClick={() => setExpandedUser(isExpanded ? null : userRecord.username)}
+                                style={{
+                                  display: "inline-flex", alignItems: "center", gap: 6,
+                                  background: "none", border: `1px solid ${T.border}`,
+                                  borderRadius: 7, padding: "5px 12px",
+                                  fontSize: 12, fontWeight: 600, color: T.muted,
+                                  cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+                                  width: "fit-content", marginTop: 2,
+                                }}
+                              >
+                                {isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                                {isExpanded ? "Hide" : "Show"} sample rows
+                              </button>
+                              {isExpanded && userRecord.raw_samples.map((rec, k) => (
+                                <div key={k} style={{
+                                  borderRadius: 8, overflow: "hidden",
+                                  border: "1px solid rgba(204,0,0,0.15)",
+                                  borderLeft: `3px solid ${T.red}`,
                                 }}>
-                                  Sample Invalid Rows (up to 3)
-                                </p>
-                                {userRecord.sample_errors.map((rec, k) => (
-                                  <div key={k} style={{
-                                    borderRadius: 8, overflow: "hidden",
-                                    border: "1px solid rgba(204,0,0,0.15)",
-                                    borderLeft: `3px solid ${T.red}`,
+                                  <div style={{
+                                    padding: "7px 12px",
+                                    background: "rgba(204,0,0,0.06)",
+                                    fontSize: 12, fontWeight: 700, color: T.red,
                                   }}>
-                                    <div style={{
-                                      padding: "7px 12px",
-                                      background: "rgba(204,0,0,0.06)",
-                                      fontSize: 12, fontWeight: 700, color: T.red,
-                                    }}>
-                                      Row {rec.row_number}
-                                    </div>
-                                    <div style={{ padding: "8px 12px", display: "flex", flexDirection: "column", gap: 5 }}>
-                                      {rec.errors.map((err, m) => (
-                                        <div key={m} style={{
-                                          display: "flex", alignItems: "flex-start", gap: 8,
-                                          fontSize: 12.5, color: T.text,
-                                        }}>
-                                          <span style={{ fontWeight: 700, minWidth: 120, color: T.muted }}>
-                                            {err.field}:
-                                          </span>
-                                          <span style={{
-                                            background: T.redBg, color: T.red,
-                                            padding: "0px 6px", borderRadius: 5,
-                                            fontWeight: 600, fontSize: 12,
-                                          }}>
-                                            "{err.value}"
-                                          </span>
-                                          <span style={{ color: T.muted, fontSize: 12 }}>
-                                            — {err.reason}
-                                          </span>
-                                        </div>
-                                      ))}
-                                    </div>
+                                    Row {rec.row_number}
                                   </div>
-                                ))}
-                              </>
-                            )}
-                          </div>
-                        )}
+                                  <div style={{ padding: "8px 12px", display: "flex", flexDirection: "column", gap: 4 }}>
+                                    {Object.entries(rec.data || {}).map(([field, val], m) => (
+                                      <div key={m} style={{
+                                        display: "flex", alignItems: "flex-start", gap: 8,
+                                        fontSize: 12.5, color: T.text,
+                                      }}>
+                                        <span style={{ fontWeight: 700, minWidth: 140, color: T.muted, flexShrink: 0 }}>
+                                          {field}:
+                                        </span>
+                                        <span style={{ color: T.text, fontSize: 12 }}>{val}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              ))}
+                            </>
+                          )}
+                        </div>
                       </div>
                     );
                   })}
@@ -807,7 +840,7 @@ const Dashboard = () => {
         }}>
           <div style={{
             background: T.white, borderRadius: 18,
-            width: "100%", maxWidth: 760,
+            width: "100%", maxWidth: 860,
             maxHeight: "85vh", display: "flex", flexDirection: "column",
             boxShadow: "0 24px 64px rgba(0,0,0,0.18)",
             overflow: "hidden",
@@ -818,6 +851,7 @@ const Dashboard = () => {
               borderBottom: `1px solid ${T.border}`,
               display: "flex", alignItems: "center",
               justifyContent: "space-between", flexShrink: 0,
+              background: T.white,
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <div style={{
@@ -832,7 +866,7 @@ const Dashboard = () => {
                     Valid Records
                   </h3>
                   <p style={{ fontSize: 12.5, color: T.muted, margin: 0, lineHeight: 1.4 }}>
-                    {validFormName} — per-user valid entry count
+                    {validFormName} — per-user valid entries
                   </p>
                 </div>
               </div>
@@ -875,13 +909,12 @@ const Dashboard = () => {
                   height: 200, flexDirection: "column", gap: 10,
                 }}>
                   <XCircle size={40} color={T.muted} />
-                  <p style={{ color: T.muted, fontSize: 14, margin: 0 }}>
-                    No valid records found or endpoint not available yet.
-                  </p>
+                  <p style={{ color: T.muted, fontSize: 14, margin: 0 }}>No valid records found.</p>
                 </div>
 
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+
                   {/* Summary strip */}
                   <div style={{
                     padding: "10px 16px", borderRadius: 10,
@@ -894,76 +927,111 @@ const Dashboard = () => {
                     <span style={{ fontSize: 13, fontWeight: 600, color: T.green }}>
                       {validRecords.length} user{validRecords.length !== 1 ? "s" : ""} with valid entries
                     </span>
+                    <span style={{ fontSize: 12.5, color: T.muted, marginLeft: 4 }}>
+                      — all records passed validation
+                    </span>
                   </div>
 
-                  {/* Table */}
-                  <div style={{
-                    borderRadius: 12, border: `1px solid ${T.border}`,
-                    overflow: "hidden",
-                  }}>
-                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13.5 }}>
-                      <thead>
-                        <tr style={{ background: "#F7F7F5" }}>
-                          {["User", "Valid Entries"].map((h) => (
-                            <th key={h} style={{
-                              padding: "11px 18px", textAlign: "left",
-                              fontSize: 11, fontWeight: 600,
-                              textTransform: "uppercase", letterSpacing: "0.7px",
-                              color: T.muted,
-                              borderBottom: `1px solid ${T.border}`,
-                            }}>{h}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {validRecords.map((rec, i) => {
-                          const isLast = i === validRecords.length - 1;
-                          return (
-                            <tr
-                              key={i}
-                              style={{ background: T.white, transition: "background 0.12s" }}
-                              onMouseEnter={(e) => e.currentTarget.style.background = "#F9FBF9"}
-                              onMouseLeave={(e) => e.currentTarget.style.background = T.white}
+                  {/* Per-user cards */}
+                  {validRecords.map((userRecord, i) => {
+                    const isExpanded = expandedUser === userRecord.username;
+                    return (
+                      <div key={i} style={{
+                        borderRadius: 12,
+                        border: `1px solid ${T.border}`,
+                        background: T.white,
+                        overflow: "hidden",
+                        boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+                      }}>
+
+                        {/* User header */}
+                        <div style={{
+                          padding: "14px 18px",
+                          background: "rgba(5,150,105,0.04)",
+                          borderBottom: "1px solid rgba(5,150,105,0.10)",
+                          display: "flex", alignItems: "center",
+                          justifyContent: "space-between",
+                        }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                            <div style={{
+                              width: 36, height: 36, borderRadius: "50%",
+                              background: T.greenBg,
+                              border: "2px solid rgba(5,150,105,0.20)",
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                              fontSize: 13, fontWeight: 800, color: T.green, flexShrink: 0,
+                            }}>
+                              {(userRecord.username || "?")[0].toUpperCase()}
+                            </div>
+                            <div>
+                              <p style={{ fontSize: 14, fontWeight: 700, color: T.text, margin: 0 }}>
+                                {userRecord.username}
+                              </p>
+                              <p style={{ fontSize: 12, color: T.muted, margin: 0, lineHeight: 1.4 }}>
+                                {userRecord.total_valid} valid entr{userRecord.total_valid !== 1 ? "ies" : "y"}
+                              </p>
+                            </div>
+                          </div>
+                          <span style={{
+                            fontSize: 12, fontWeight: 700,
+                            background: T.greenBg,
+                            border: "1px solid rgba(5,150,105,0.20)",
+                            color: T.green, padding: "3px 12px", borderRadius: 99,
+                          }}>
+                            ✓ {userRecord.total_valid.toLocaleString()} valid
+                          </span>
+                        </div>
+
+                        {/* Sample rows — behind toggle */}
+                        {userRecord.sample_rows?.length > 0 && (
+                          <div style={{ padding: "12px 18px", display: "flex", flexDirection: "column", gap: 8 }}>
+                            <button
+                              onClick={() => setExpandedUser(isExpanded ? null : userRecord.username)}
+                              style={{
+                                display: "inline-flex", alignItems: "center", gap: 6,
+                                background: "none", border: `1px solid ${T.border}`,
+                                borderRadius: 7, padding: "5px 12px",
+                                fontSize: 12, fontWeight: 600, color: T.muted,
+                                cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+                                width: "fit-content",
+                              }}
                             >
-                              <td style={{
-                                padding: "13px 18px",
-                                borderBottom: isLast ? "none" : `1px solid ${T.border}`,
+                              {isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                              {isExpanded ? "Hide" : "Show"} sample valid rows
+                            </button>
+
+                            {isExpanded && userRecord.sample_rows.map((rec, k) => (
+                              <div key={k} style={{
+                                borderRadius: 8, overflow: "hidden",
+                                border: "1px solid rgba(5,150,105,0.18)",
+                                borderLeft: `3px solid ${T.green}`,
                               }}>
-                                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                                  <div style={{
-                                    width: 32, height: 32, borderRadius: "50%",
-                                    background: T.greenBg,
-                                    border: "2px solid rgba(5,150,105,0.18)",
-                                    display: "flex", alignItems: "center", justifyContent: "center",
-                                    fontSize: 12, fontWeight: 800, color: T.green, flexShrink: 0,
-                                  }}>
-                                    {(rec.username || "?")[0].toUpperCase()}
-                                  </div>
-                                  <span style={{ fontWeight: 600, color: T.text }}>
-                                    {rec.username}
-                                  </span>
-                                </div>
-                              </td>
-                              <td style={{
-                                padding: "13px 18px",
-                                borderBottom: isLast ? "none" : `1px solid ${T.border}`,
-                              }}>
-                                <span style={{
-                                  display: "inline-flex", alignItems: "center", gap: 5,
-                                  background: T.greenBg,
-                                  border: "1px solid rgba(5,150,105,0.2)",
-                                  color: T.green, fontWeight: 700, fontSize: 13,
-                                  padding: "4px 12px", borderRadius: 8,
+                                <div style={{
+                                  padding: "7px 12px",
+                                  background: "rgba(5,150,105,0.06)",
+                                  fontSize: 12, fontWeight: 700, color: T.green,
                                 }}>
-                                  ✓ {(rec.total_valid ?? rec.valid_count ?? 0).toLocaleString()} valid
-                                </span>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
+                                  Row {rec.row_number}
+                                </div>
+                                <div style={{ padding: "8px 12px", display: "flex", flexDirection: "column", gap: 4 }}>
+                                  {Object.entries(rec.data || {}).map(([field, val], m) => (
+                                    <div key={m} style={{
+                                      display: "flex", alignItems: "flex-start", gap: 8,
+                                      fontSize: 12.5, color: T.text,
+                                    }}>
+                                      <span style={{ fontWeight: 700, minWidth: 160, color: T.muted, flexShrink: 0 }}>
+                                        {field}:
+                                      </span>
+                                      <span style={{ color: T.text, fontSize: 12 }}>{val}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>

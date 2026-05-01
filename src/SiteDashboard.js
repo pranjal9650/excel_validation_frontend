@@ -203,6 +203,49 @@ function Pill({ label, color, bg, border }) {
   );
 }
 
+/* ─── Day Range Picker ───────────────────────────────────────── */
+const DAY_OPTIONS = [
+  { label: "3D",  days: 3  },
+  { label: "7D",  days: 7  },
+  { label: "14D", days: 14 },
+  { label: "30D", days: 30 },
+];
+
+function DayRangePicker({ value, onChange }) {
+  return (
+    <div style={{
+      display: "flex", alignItems: "center",
+      background: T.surface,
+      border: `1px solid ${T.border}`,
+      borderRadius: 9, padding: 3, gap: 2,
+    }}>
+      {DAY_OPTIONS.map(({ label, days }) => {
+        const active = value === days;
+        return (
+          <button
+            key={days}
+            onClick={() => onChange(days)}
+            style={{
+              height: 28, minWidth: 40,
+              borderRadius: 7, border: "none",
+              background: active ? T.white : "transparent",
+              color: active ? T.red : T.muted,
+              fontWeight: active ? 700 : 500,
+              fontSize: 12, fontFamily: "'DM Sans', sans-serif",
+              cursor: "pointer",
+              boxShadow: active ? "0 1px 4px rgba(0,0,0,0.1)" : "none",
+              transition: "all 0.15s ease",
+              padding: "0 10px",
+            }}
+          >
+            {label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 /* ─── Main Component ─────────────────────────────────────────── */
 const SiteDashboard = () => {
   const [stats,          setStats]          = useState(null);
@@ -215,6 +258,7 @@ const SiteDashboard = () => {
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
+  const [selectedDays,   setSelectedDays]   = useState(30);
 
   /* — filter state — */
   const [activeSearch,       setActiveSearch]       = useState("");
@@ -223,17 +267,18 @@ const SiteDashboard = () => {
   const [alarmTypeFilter,    setAlarmTypeFilter]    = useState("All");
   const [alarmCircleFilter,  setAlarmCircleFilter]  = useState("All");
 
-  const fetchAll = useCallback(async (isRefresh = false) => {
+  const fetchAll = useCallback(async (isRefresh = false, days = 30) => {
     if (isRefresh) setRefreshing(true);
     else setLoading(true);
+    const p = `?days=${days}`;
     try {
       const [sRes, alRes, alListRes, trendRes, typeRes, circleRes, acRes] = await Promise.all([
-        axios.get(`${BASE_URL}/SITE-DASHBOARD-STATS`),
+        axios.get(`${BASE_URL}/SITE-DASHBOARD-STATS${p}`),
         axios.get(`${BASE_URL}/SITE-ACTIVE-LIST`),
-        axios.get(`${BASE_URL}/SITE-ALARM-LIST`),
-        axios.get(`${BASE_URL}/SITE-ALARM-TREND`),
-        axios.get(`${BASE_URL}/SITE-ALARM-BY-TYPE`),
-        axios.get(`${BASE_URL}/SITE-ALARM-BY-CIRCLE`),
+        axios.get(`${BASE_URL}/SITE-ALARM-LIST${p}`),
+        axios.get(`${BASE_URL}/SITE-ALARM-TREND${p}`),
+        axios.get(`${BASE_URL}/SITE-ALARM-BY-TYPE${p}`),
+        axios.get(`${BASE_URL}/SITE-ALARM-BY-CIRCLE${p}`),
         axios.get(`${BASE_URL}/SITE-ACTIVE-BY-CIRCLE`),
       ]);
       setStats(sRes.data);
@@ -252,7 +297,7 @@ const SiteDashboard = () => {
     }
   }, []);
 
-  useEffect(() => { fetchAll(); }, [fetchAll]);
+  useEffect(() => { fetchAll(false, selectedDays); }, [fetchAll, selectedDays]);
 
   /* — derived filter options — */
   const activeCircleOpts = [...new Set(activeList.map((r) => r.circle).filter(Boolean))].sort();
@@ -313,17 +358,27 @@ const SiteDashboard = () => {
     <div style={{ display: "flex", flexDirection: "column", gap: 20, fontFamily: "'DM Sans', sans-serif" }}>
 
       {/* ── Topbar ── */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
         <div>
           <h2 style={{ fontSize: 20, fontWeight: 800, color: T.text, margin: 0, letterSpacing: "-0.4px" }}>Site Dashboard</h2>
           {lastUpdated && (
             <p style={{ fontSize: 12, color: T.muted, margin: "3px 0 0" }}>
-              Last updated: {lastUpdated.toLocaleTimeString()} · 1-month alarm analysis
+              Last updated: {lastUpdated.toLocaleTimeString()} · Last {selectedDays} days
             </p>
           )}
         </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <DayRangePicker
+            value={selectedDays}
+            onChange={(d) => {
+              setSelectedDays(d);
+              setAlarmTypeFilter("All");
+              setAlarmCircleFilter("All");
+              setAlarmSearch("");
+            }}
+          />
         <button
-          onClick={() => fetchAll(true)}
+          onClick={() => fetchAll(true, selectedDays)}
           disabled={refreshing}
           style={{
             display: "inline-flex", alignItems: "center", gap: 7,
@@ -354,6 +409,7 @@ const SiteDashboard = () => {
             </>
           )}
         </button>
+        </div>
       </div>
 
       {/* ── 5 KPI Cards ── */}
@@ -372,7 +428,7 @@ const SiteDashboard = () => {
           icon={AlertTriangle}
           accent={T.red}
           bg={T.redBg}
-          sub="Last 1 month"
+          sub={`Last ${selectedDays} days`}
         />
         <SiteStatCard
           label="Sites with Alarms"
@@ -403,10 +459,10 @@ const SiteDashboard = () => {
       {/* ── Row: Trend Line + Alarm by Type ── */}
       <div style={{ display: "grid", gridTemplateColumns: "1.55fr 1fr", gap: 20 }}>
 
-        {/* 10-Day Alarm Trend */}
+        {/* Alarm Trend */}
         <SectionCard
-          title="30-Day Alarm Trend"
-          subtitle="Daily alarm event count over the past 1 month"
+          title={`${selectedDays}-Day Alarm Trend`}
+          subtitle={`Daily alarm event count over the past ${selectedDays} days`}
           icon={Activity}
           accent={T.red}
           accentBg={T.redBg}
@@ -631,7 +687,7 @@ const SiteDashboard = () => {
       {/* ── Alarm Events Table ── */}
       <SectionCard
         title="Alarm Events"
-        subtitle="1-month alarm report — site outage events"
+        subtitle={`Last ${selectedDays}-day alarm report — site outage events`}
         icon={AlertTriangle}
         accent={T.red}
         accentBg={T.redBg}
